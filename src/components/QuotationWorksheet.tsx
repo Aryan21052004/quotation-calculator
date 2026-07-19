@@ -49,9 +49,9 @@ interface ColumnDef extends WorksheetColumn {
   alignRight?: boolean
 }
 
-// The sheet has no real Excel data validation; its D column holds only
-// "NEW" (typed in two casings, normalized here) or blank.
-const CONDITION_OPTIONS = ['', 'NEW']
+// Part condition choices. The original sheet only ever held "NEW" (free
+// text, no validation); OLD added by request.
+const CONDITION_OPTIONS = ['', 'NEW', 'OLD']
 
 // Mirrors the OLD DONT USE sheet: A-F identification/input, G-H freight,
 // I-K hidden calculated columns, L-M totals. Formula columns render as
