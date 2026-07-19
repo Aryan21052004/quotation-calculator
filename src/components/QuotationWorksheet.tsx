@@ -14,11 +14,7 @@ import {
   updateCalculation,
 } from '../services'
 import SearchInput from './SearchInput'
-import {
-  calculateE4UnitPrice,
-  excelCoerceNumber,
-  formatE4UnitPrice,
-} from '../utils/quotationFormulas'
+import { excelCoerceNumber } from '../utils/quotationFormulas'
 import {
   calculateCostRollup,
   formatGeneral,
@@ -224,8 +220,9 @@ function conditionForSn(sn: number): string {
   return ''
 }
 
-// The sheet's populated line items. S/N 2's unit price cell (E4) holds the
-// formula =E3*98 in Excel - not seeded here; it renders as a computed cell.
+// The sheet's populated line items. (The original workbook had a stray
+// formula in S/N 2's unit price cell, =E3*98 - an old currency-conversion
+// leftover; removed by request, so that cell is a normal input now.)
 const DETAIL_SEEDS: Record<number, Partial<WorksheetRow>> = {
   1: { partNumber: 'NAS1149DN316J', moq: '200', unitPrice: '0.91', leadTime: '0.27' },
   4: { moq: '5' },
@@ -393,17 +390,6 @@ function QuotationWorksheet() {
     setRows((prev) => prev.map((row) => (row.id === id ? { ...row, [field]: value } : row)))
   }, [])
 
-  // Excel E4 (=E3*98): S/N 2's unit price is derived from S/N 1's, so its
-  // cell renders read-only. Blank E3 gives 0.00, non-numeric text #VALUE!,
-  // and a deleted source row #REF! - matching Excel exactly. Recomputes only
-  // when its sole precedent (E3) changes, like Excel's dirty-cell recalc.
-  const sn1Row = rows.find((row) => row.sn === 1)
-  const sn1UnitPrice = sn1Row ? sn1Row.unitPrice : null
-  const e4Display = useMemo(
-    () => formatE4UnitPrice(calculateE4UnitPrice(sn1UnitPrice)),
-    [sn1UnitPrice],
-  )
-
   return (
     <div className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-soft">
       {/* Toolbar */}
@@ -545,7 +531,6 @@ function QuotationWorksheet() {
                 columns={visibleColumns}
                 updateField={updateField}
                 removeRow={removeRow}
-                e4Display={row.sn === 2 ? e4Display : null}
                 rollup={rowRollups[index]}
                 profitRate={profitRate}
               />
@@ -588,8 +573,6 @@ interface WorksheetBodyRowProps {
   columns: ColumnDef[]
   updateField: (id: string, field: EditableField, value: string) => void
   removeRow: (id: string) => void
-  /** E4's display value - non-null only on the S/N 2 row. */
-  e4Display: string | null
   /** The row's Section 4 chain, computed once by the parent's cache. */
   rollup: CostRollupResults
   profitRate: ProfitRate
@@ -605,7 +588,6 @@ const WorksheetBodyRow = memo(function WorksheetBodyRow({
   columns,
   updateField,
   removeRow,
-  e4Display,
   rollup,
   profitRate,
 }: WorksheetBodyRowProps) {
@@ -619,17 +601,7 @@ const WorksheetBodyRow = memo(function WorksheetBodyRow({
       </td>
       {columns.map((column) => (
         <td key={column.letter} className={`border-r border-b p-0 ${CELL_TD_STYLES[column.group]}`}>
-          {column.field === 'unitPrice' && row.sn === 2 ? (
-            <div
-              title="Excel E4: =E3*98 (calculated)"
-              aria-label={`${column.label} row 2, calculated from row 1`}
-              className="h-[20px] px-1 text-right text-[13px] leading-[20px]"
-            >
-              {e4Display}
-            </div>
-          ) : (
-            renderCell(column, row, updateField, rollup, finalPrice, profitRate)
-          )}
+          {renderCell(column, row, updateField, rollup, finalPrice, profitRate)}
         </td>
       ))}
       <td className="border-b border-slate-200 text-center">
