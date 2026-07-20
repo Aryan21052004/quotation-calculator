@@ -1,33 +1,38 @@
 import type { CellValueKind } from '../../types'
 import { validateCellValue } from '../../utils/worksheetValidation'
 import {
+  calculatePricingBreakdown,
   formatGeneral,
   formatTwoDecimals,
   isError,
   type CellResult,
-  type CostRollupResults,
-} from '../../utils/costRollupFormulas'
-import { calculateSellingPrice, type ProfitRate } from '../../utils/profitFormulas'
-import { Badge, FormField, SectionCard, SelectInput, TextInput } from '../ui'
+  type PricingCore,
+  type ProfitRate,
+} from '../../utils/pricingFormulas'
+import { convertForDisplay, type CurrencyDisplay } from '../../utils/exchangeRate'
+import { Badge, FormField, SectionCard, SelectInput, TextArea, TextInput } from '../ui'
 import type { EditableField, WorksheetRow } from './types'
 
 // Part condition choices. The original sheet only ever held "NEW" (free
-// text, no validation); OLD added by request.
-const CONDITION_OPTIONS = ['', 'NEW', 'OLD']
+// text, no validation); the rest added by request.
+const CONDITION_OPTIONS = ['', 'NEW', 'OH', 'SV', 'RE', 'INSP', 'NS']
 
 interface LineItemEditorProps {
   row: WorksheetRow
-  /** The row's cost-rollup chain, from the parent's identity-stable cache. */
-  rollup: CostRollupResults
+  /** The row's pricing core, from the parent's identity-stable cache. */
+  core: PricingCore
   profitRate: ProfitRate
+  display: CurrencyDisplay
   onFieldChange: (id: string, field: EditableField, value: string) => void
 }
 
 /** Right panel: the selected line item edited through sectioned cards. */
-function LineItemEditor({ row, rollup, profitRate, onFieldChange }: LineItemEditorProps) {
+function LineItemEditor({ row, core, profitRate, display, onFieldChange }: LineItemEditorProps) {
   const pct = `${profitRate * 100}%`
-  // The final quoted price per unit - profit share already included.
-  const finalPrice = calculateSellingPrice(rollup.unitCost, profitRate)
+  const ccy = display.currency
+  // Final price EA = ((MOQ × Unit price) + profit% + Freight) ÷ MOQ.
+  // Calculated in USD as always; converted (applied rate) for display only.
+  const { profitAmount, lineTotal, finalPrice } = calculatePricingBreakdown(core, profitRate)
 
   return (
     <div className="space-y-6">
@@ -46,6 +51,18 @@ function LineItemEditor({ row, rollup, profitRate, onFieldChange }: LineItemEdit
             onFieldChange={onFieldChange}
             className="sm:col-span-2"
           />
+          <FormField
+            label="Description"
+            htmlFor={`item-${row.id}-description`}
+            className="sm:col-span-2"
+          >
+            <TextArea
+              id={`item-${row.id}-description`}
+              value={row.description}
+              placeholder="e.g. Washer, flat — cres, .164 ID × .312 OD"
+              onChange={(event) => onFieldChange(row.id, 'description', event.target.value)}
+            />
+          </FormField>
           <FormField label="Condition" htmlFor={`item-${row.id}-condition`}>
             <SelectInput
               id={`item-${row.id}-condition`}
@@ -67,20 +84,23 @@ function LineItemEditor({ row, rollup, profitRate, onFieldChange }: LineItemEdit
       </SectionCard>
 
       <SectionCard title="Purchase & Freight" subtitle="Supplier pricing and shipping charges.">
+        {/* Storage field names are interchanged (user confirmed): `leadTime`
+            holds the unit price and `unitPrice` holds the lead time, so the
+            labels here are swapped relative to the field names on purpose. */}
         <div className="grid gap-4 sm:grid-cols-2">
           <EditableInput
             row={row}
-            field="unitPrice"
+            field="leadTime"
             label="Unit price EA (USD)"
-            kind="decimal"
+            kind="currency"
             align="right"
             onFieldChange={onFieldChange}
           />
           <EditableInput
             row={row}
-            field="leadTime"
+            field="unitPrice"
             label="Lead time"
-            kind="currency"
+            kind="text"
             onFieldChange={onFieldChange}
           />
           <EditableInput
@@ -109,48 +129,36 @@ function LineItemEditor({ row, rollup, profitRate, onFieldChange }: LineItemEdit
       >
         <dl className="grid gap-3 sm:grid-cols-2">
           <CalculatedTile
-            label="Line value"
-            result={rollup.lineValue}
+            label={`Line value (${ccy})`}
+            result={convertForDisplay(core.lineValue, display)}
             format={formatGeneral}
-            title="Line value = MOQ × Lead time"
+            title="Line value = MOQ × Unit price"
           />
           <CalculatedTile
-            label="Custom duty"
-            result={rollup.customDuty}
-            format={formatGeneral}
-            title="Custom duty = Line value ÷ 2"
-          />
-          <CalculatedTile
-            label="Landing cost (USD)"
-            result={rollup.landingCost}
-            format={formatGeneral}
-            title="Landing cost = Freight + Clearance & forex + Line value + Custom duty"
-          />
-          <CalculatedTile
-            label="Total (USD)"
-            result={rollup.totalUsd}
-            format={formatGeneral}
-            title="Total = Landing cost × 1.01"
-          />
-          <CalculatedTile
-            label="Unit cost (USD)"
-            result={rollup.unitCost}
+            label={`Profit (${pct})`}
+            result={convertForDisplay(profitAmount, display)}
             format={formatTwoDecimals}
-            title="Unit cost = Total ÷ MOQ"
+            title={`Profit = Line value × ${pct}`}
+          />
+          <CalculatedTile
+            label={`Line total (${ccy})`}
+            result={convertForDisplay(lineTotal, display)}
+            format={formatTwoDecimals}
+            title="Line total = Line value + Profit + Freight"
             emphasis
           />
           <div
-            title={`Final price EA (USD): Unit Cost ÷ (1 − ${pct}) — includes ${pct} profit`}
+            title={`Final price EA = Line total ÷ MOQ — includes ${pct} profit`}
             className="flex items-center justify-between gap-3 rounded-xl bg-primary px-4 py-3"
           >
             <dt>
               <span className="block text-[13px] font-medium text-sky-200">
-                Final price EA (USD)
+                Final price EA ({ccy})
               </span>
               <span className="block text-[11px] text-sky-200/70">Includes {pct} profit</span>
             </dt>
             <dd className="text-xl font-bold text-white tabular-nums">
-              {formatTwoDecimals(finalPrice)}
+              {formatTwoDecimals(convertForDisplay(finalPrice, display))}
             </dd>
           </div>
         </dl>

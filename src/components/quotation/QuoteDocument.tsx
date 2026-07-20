@@ -1,17 +1,24 @@
-import { excelCoerceNumber } from '../../utils/quotationFormulas'
-import { isError, type CostRollupResults } from '../../utils/costRollupFormulas'
 import {
-  calculateSellingPrice,
+  calculatePricingBreakdown,
+  isError,
+  type PricingCore,
+  type PricingTotals,
   type ProfitRate,
-  type ProfitTotals,
-} from '../../utils/profitFormulas'
+} from '../../utils/pricingFormulas'
+import {
+  convertForDisplay,
+  currencySymbol,
+  type CurrencyDisplay,
+} from '../../utils/exchangeRate'
+import Logo from '../Logo'
 import type { WorksheetRow } from './types'
 
 interface QuoteDocumentProps {
   quoteName: string
-  items: { row: WorksheetRow; rollup: CostRollupResults }[]
+  items: { row: WorksheetRow; core: PricingCore }[]
   profitRate: ProfitRate
-  totals: ProfitTotals
+  totals: PricingTotals
+  display: CurrencyDisplay
 }
 
 /**
@@ -19,30 +26,29 @@ interface QuoteDocumentProps {
  * PDF" button opens the browser's print dialog). Shows final prices only -
  * no costs, freight internals, or profit margin ever appear here.
  */
-function QuoteDocument({ quoteName, items, profitRate, totals }: QuoteDocumentProps) {
-  // Only lines a customer should see: anything identified or priced.
-  const visibleItems = items.filter(
-    ({ row, rollup }) => row.partNumber.trim() !== '' || !isError(rollup.unitCost),
-  )
-
+function QuoteDocument({ quoteName, items, profitRate, totals, display }: QuoteDocumentProps) {
   const issuedOn = new Date().toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   })
+  // Prices are calculated in USD as always; when INR is selected they are
+  // converted for display with the applied (live + ₹1) exchange rate.
+  const ccy = display.currency
+  const symbol = currencySymbol(display)
+
+  // Only lines a customer should see: anything identified or priced.
+  const visibleItems = items
+    .map(({ row, core }) => ({ row, core, pricing: calculatePricingBreakdown(core, profitRate) }))
+    .filter(({ row, pricing }) => row.partNumber.trim() !== '' || !isError(pricing.finalPrice))
 
   return (
     <div className="bg-white p-2 text-primary">
       <header className="flex items-start justify-between border-b-2 border-primary pb-6">
         <div className="flex items-center gap-3">
-          <span
-            aria-hidden="true"
-            className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-lg font-bold text-white"
-          >
-            A
-          </span>
+          <Logo className="h-11 w-11" />
           <div>
-            <p className="text-xl font-bold tracking-tight">Aerostratus</p>
+            <p className="text-xl font-bold tracking-tight">Aryan Aviation and Air Part</p>
             <p className="text-xs text-slate-500">Aviation parts &amp; services</p>
           </div>
         </div>
@@ -61,29 +67,40 @@ function QuoteDocument({ quoteName, items, profitRate, totals }: QuoteDocumentPr
             <th className="py-2 pr-3 font-semibold">Condition</th>
             <th className="py-2 pr-3 text-right font-semibold">Qty</th>
             <th className="py-2 pr-3 font-semibold">Lead time</th>
-            <th className="py-2 pr-3 text-right font-semibold">Unit price (USD)</th>
-            <th className="py-2 text-right font-semibold">Amount (USD)</th>
+            <th className="py-2 pr-3 text-right font-semibold">Unit price ({ccy})</th>
+            <th className="py-2 text-right font-semibold">Amount ({ccy})</th>
           </tr>
         </thead>
         <tbody>
-          {visibleItems.map(({ row, rollup }, index) => {
-            const price = calculateSellingPrice(rollup.unitCost, profitRate)
-            const moq = excelCoerceNumber(row.moq)
-            const priced = !isError(price) && typeof moq === 'number' && moq > 0
+          {visibleItems.map(({ row, core, pricing }, index) => {
+            const priced =
+              !isError(pricing.lineTotal) && typeof core.moq === 'number' && core.moq > 0
             return (
               <tr key={row.id} className="border-b border-slate-200">
                 <td className="py-2.5 pr-3 text-slate-400">{index + 1}</td>
-                <td className="py-2.5 pr-3 font-medium">{row.partNumber || '—'}</td>
+                <td className="py-2.5 pr-3 font-medium">
+                  {row.partNumber || '—'}
+                  {row.description.trim() !== '' && (
+                    <span className="block text-xs font-normal text-slate-500">
+                      {row.description}
+                    </span>
+                  )}
+                </td>
                 <td className="py-2.5 pr-3">{row.condition || '—'}</td>
                 <td className="py-2.5 pr-3 text-right tabular-nums">
                   {row.moq !== '' ? row.moq : '—'}
                 </td>
-                <td className="py-2.5 pr-3">{row.leadTime !== '' ? row.leadTime : '—'}</td>
+                {/* Storage names are interchanged: `unitPrice` holds the lead time. */}
+                <td className="py-2.5 pr-3">{row.unitPrice !== '' ? row.unitPrice : '—'}</td>
                 <td className="py-2.5 pr-3 text-right tabular-nums">
-                  {isError(price) ? '—' : `$${price.toFixed(2)}`}
+                  {isError(pricing.finalPrice)
+                    ? '—'
+                    : `${symbol}${(convertForDisplay(pricing.finalPrice, display) as number).toFixed(2)}`}
                 </td>
                 <td className="py-2.5 text-right font-medium tabular-nums">
-                  {priced ? `$${(price * moq).toFixed(2)}` : '—'}
+                  {priced
+                    ? `${symbol}${(convertForDisplay(pricing.lineTotal, display) as number).toFixed(2)}`
+                    : '—'}
                 </td>
               </tr>
             )
@@ -94,7 +111,8 @@ function QuoteDocument({ quoteName, items, profitRate, totals }: QuoteDocumentPr
             <td colSpan={5} />
             <td className="py-3 pr-3 text-right text-sm font-bold uppercase">Total</td>
             <td className="py-3 text-right text-base font-bold tabular-nums">
-              ${totals.grandTotal.toFixed(2)}
+              {symbol}
+              {(convertForDisplay(totals.grandTotal, display) as number).toFixed(2)}
             </td>
           </tr>
         </tfoot>

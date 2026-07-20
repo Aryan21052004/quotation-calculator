@@ -1,22 +1,31 @@
 import { memo, useState } from 'react'
 import {
+  calculatePricingBreakdown,
+  calculateUnitCost,
   formatTwoDecimals,
   isError,
-  type CostRollupResults,
-} from '../../utils/costRollupFormulas'
-import { calculateSellingPrice, type ProfitRate } from '../../utils/profitFormulas'
+  type CellResult,
+  type PricingCore,
+  type ProfitRate,
+} from '../../utils/pricingFormulas'
+import {
+  convertForDisplay,
+  currencySymbol,
+  type CurrencyDisplay,
+} from '../../utils/exchangeRate'
 import SearchInput from '../SearchInput'
 import { Badge, Button, SectionCard } from '../ui'
 import type { WorksheetRow } from './types'
 
 export interface LineItemEntry {
   row: WorksheetRow
-  rollup: CostRollupResults
+  core: PricingCore
 }
 
 interface LineItemListProps {
   items: LineItemEntry[]
   profitRate: ProfitRate
+  display: CurrencyDisplay
   selectedId: string | null
   onSelect: (id: string) => void
   onRemove: (id: string) => void
@@ -27,6 +36,7 @@ interface LineItemListProps {
 function LineItemList({
   items,
   profitRate,
+  display,
   selectedId,
   onSelect,
   onRemove,
@@ -59,12 +69,13 @@ function LineItemList({
         ariaLabel="Filter line items"
       />
       <ul aria-label="Line items" className="mt-3 max-h-[560px] space-y-1 overflow-y-auto pr-1">
-        {visible.map(({ row, rollup }) => (
+        {visible.map(({ row, core }) => (
           <LineItemRow
             key={row.id}
             row={row}
-            rollup={rollup}
+            core={core}
             profitRate={profitRate}
+            display={display}
             selected={row.id === selectedId}
             onSelect={onSelect}
             onRemove={onRemove}
@@ -82,32 +93,36 @@ function LineItemList({
 
 interface LineItemRowProps {
   row: WorksheetRow
-  /** The row's cost-rollup chain, from the parent's identity-stable cache. */
-  rollup: CostRollupResults
+  /** The row's pricing core, from the parent's identity-stable cache. */
+  core: PricingCore
   profitRate: ProfitRate
+  display: CurrencyDisplay
   selected: boolean
   onSelect: (id: string) => void
   onRemove: (id: string) => void
 }
 
-/** Money display for the list: numbers get a $ prefix, errors show as a dash. */
-function listPrice(result: ReturnType<typeof calculateSellingPrice>): string {
-  return isError(result) ? '—' : `$${formatTwoDecimals(result)}`
+/** Money display for the list: converted numbers get a symbol, errors a dash. */
+function listPrice(result: CellResult, display: CurrencyDisplay): string {
+  const converted = convertForDisplay(result, display)
+  return isError(converted) ? '—' : `${currencySymbol(display)}${formatTwoDecimals(converted)}`
 }
 
 // Memoized so typing in the editor re-renders only the edited item's row:
-// row objects are immutable and the rollup comes from the parent's WeakMap
-// cache, so untouched rows keep identical props.
+// row objects are immutable, the core comes from the parent's WeakMap cache,
+// and the display object is memoized, so untouched rows keep identical props.
 const LineItemRow = memo(function LineItemRow({
   row,
-  rollup,
+  core,
   profitRate,
+  display,
   selected,
   onSelect,
   onRemove,
 }: LineItemRowProps) {
-  const finalPrice = listPrice(calculateSellingPrice(rollup.unitCost, profitRate))
-  const unitCost = isError(rollup.unitCost) ? '' : `cost $${formatTwoDecimals(rollup.unitCost)}`
+  const finalPrice = listPrice(calculatePricingBreakdown(core, profitRate).finalPrice, display)
+  const unitCost = calculateUnitCost(core)
+  const unitCostLabel = isError(unitCost) ? '' : `cost ${listPrice(unitCost, display)}`
 
   return (
     <li className="group relative">
@@ -116,9 +131,7 @@ const LineItemRow = memo(function LineItemRow({
         onClick={() => onSelect(row.id)}
         aria-current={selected || undefined}
         className={`w-full rounded-xl border px-3 py-2.5 pr-10 text-left transition-colors focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none ${
-          selected
-            ? 'border-accent/40 bg-sky-50/80'
-            : 'border-transparent hover:bg-slate-50'
+          selected ? 'border-accent/40 bg-sky-50/80' : 'border-transparent hover:bg-slate-50'
         }`}
       >
         <span className="flex items-center gap-3">
@@ -144,8 +157,8 @@ const LineItemRow = memo(function LineItemRow({
             <span className="block text-sm font-semibold text-primary tabular-nums">
               {finalPrice}
             </span>
-            {unitCost !== '' && (
-              <span className="block text-[11px] text-slate-400 tabular-nums">{unitCost}</span>
+            {unitCostLabel !== '' && (
+              <span className="block text-[11px] text-slate-400 tabular-nums">{unitCostLabel}</span>
             )}
           </span>
         </span>

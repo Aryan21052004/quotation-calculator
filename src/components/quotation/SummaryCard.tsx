@@ -1,13 +1,23 @@
-import type { ProfitRate, ProfitTotals } from '../../utils/profitFormulas'
+import type { PricingTotals, ProfitRate } from '../../utils/pricingFormulas'
+import {
+  convertForDisplay,
+  currencySymbol,
+  type CurrencyDisplay,
+} from '../../utils/exchangeRate'
 import { Badge, SectionCard } from '../ui'
 
 interface SummaryCardProps {
-  totals: ProfitTotals
+  totals: PricingTotals
   profitRate: ProfitRate
+  display: CurrencyDisplay
 }
 
 /** Bottom card: color-coded totals across all priced line items. */
-function SummaryCard({ totals, profitRate }: SummaryCardProps) {
+function SummaryCard({ totals, profitRate, display }: SummaryCardProps) {
+  // Totals stay in USD; conversion (applied rate) happens at display only.
+  const money = (value: number) =>
+    `${currencySymbol(display)}${(convertForDisplay(value, display) as number).toFixed(2)}`
+
   return (
     <SectionCard
       title="Summary"
@@ -23,19 +33,19 @@ function SummaryCard({ totals, profitRate }: SummaryCardProps) {
         />
         <SummaryTile
           label="Total cost"
-          value={`$${totals.totalCost.toFixed(2)}`}
+          value={money(totals.totalCost)}
           className="border-slate-200/70 bg-slate-50/80"
           valueClassName="text-primary"
         />
         <SummaryTile
           label="Total profit"
-          value={`$${totals.totalProfit.toFixed(2)}`}
+          value={money(totals.totalProfit)}
           className="border-emerald-100 bg-emerald-50"
           valueClassName="text-emerald-700"
         />
         <SummaryTile
           label="Grand total"
-          value={`$${totals.grandTotal.toFixed(2)}`}
+          value={money(totals.grandTotal)}
           className="border-primary bg-primary"
           labelClassName="text-sky-200"
           valueClassName="text-white"

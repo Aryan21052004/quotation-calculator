@@ -1,5 +1,5 @@
 import type { CalculationSummary } from '../../types'
-import { PROFIT_RATE_OPTIONS, type ProfitRate } from '../../utils/profitFormulas'
+import { PROFIT_RATE_OPTIONS, type ProfitRate } from '../../utils/pricingFormulas'
 import SearchInput from '../SearchInput'
 import { Badge, Button, FormField, SectionCard, TextInput } from '../ui'
 

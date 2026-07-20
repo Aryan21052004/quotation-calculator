@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { CalculationSummary } from '../types'
 import {
   deleteCalculation,
@@ -7,13 +7,16 @@ import {
   searchCalculations,
   updateCalculation,
 } from '../services'
-import { excelCoerceNumber } from '../utils/quotationFormulas'
-import { calculateCostRollup, type CostRollupResults } from '../utils/costRollupFormulas'
 import {
   PROFIT_RATE_OPTIONS,
-  calculateProfitTotals,
+  calculatePricingCore,
+  calculatePricingTotals,
+  type PricingCore,
   type ProfitRate,
-} from '../utils/profitFormulas'
+} from '../utils/pricingFormulas'
+import type { CurrencyDisplay, DisplayCurrency } from '../utils/exchangeRate'
+import { useExchangeRate } from '../hooks/useExchangeRate'
+import ExchangeRateCard from './quotation/ExchangeRateCard'
 import QuotationDetailsCard from './quotation/QuotationDetailsCard'
 import LineItemList from './quotation/LineItemList'
 import LineItemEditor from './quotation/LineItemEditor'
@@ -29,6 +32,7 @@ function makeRow(sn: number, seed: Partial<WorksheetRow> = {}): WorksheetRow {
     id: `row-${rowIdCounter}`,
     sn,
     partNumber: '',
+    description: '',
     moq: '',
     condition: '',
     unitPrice: '',
@@ -39,24 +43,33 @@ function makeRow(sn: number, seed: Partial<WorksheetRow> = {}): WorksheetRow {
   }
 }
 
-// The quotation starts with a single line item (workbook S/N 1,
-// cell-for-cell); everything else is added by the user.
-const INITIAL_ROWS: WorksheetRow[] = [
-  makeRow(1, {
-    partNumber: 'NAS1149DN316J',
-    moq: '200',
-    condition: 'NEW',
-    unitPrice: '0.91',
-    leadTime: '0.27',
-    freight: '100',
-    clearance: '0',
-  }),
-]
+// The quotation starts with a single empty line item; everything is
+// entered by the user (the old sample row was removed by request).
+// NOTE: the stored field names are historical and INTERCHANGED (user
+// confirmed): `leadTime` holds the real unit price and `unitPrice` holds
+// the lead time. Kept as-is so saved calculations still load; the UI and
+// the pricing engine apply the swapped meaning.
+const INITIAL_ROWS: WorksheetRow[] = [makeRow(1)]
 
 function QuotationWorksheet() {
   const [rows, setRows] = useState<WorksheetRow[]>(INITIAL_ROWS)
-  const [profitRate, setProfitRate] = useState<ProfitRate>(0.4)
+  const [profitRate, setProfitRate] = useState<ProfitRate>(0.415)
   const [selectedId, setSelectedId] = useState<string | null>(INITIAL_ROWS[0]?.id ?? null)
+
+  // Display currency. All pricing stays in USD; INR is a display-time
+  // conversion with the applied (live + ₹1) exchange rate. INR only takes
+  // effect once a rate is available; memoized so memoized list rows keep
+  // identical props while the user types.
+  const exchangeRate = useExchangeRate()
+  const [currency, setCurrency] = useState<DisplayCurrency>('USD')
+  const { appliedRate } = exchangeRate
+  const display: CurrencyDisplay = useMemo(
+    () => ({
+      currency: currency === 'INR' && appliedRate !== null ? 'INR' : 'USD',
+      appliedRate,
+    }),
+    [currency, appliedRate],
+  )
 
   // Saved-calculation state: which stored calculation (if any) is open,
   // its name, and the open/search panel.
@@ -71,6 +84,7 @@ function QuotationWorksheet() {
     return rows.map((row) => ({
       sn: row.sn,
       partNumber: row.partNumber,
+      description: row.description,
       moq: row.moq,
       condition: row.condition,
       unitPrice: row.unitPrice,
@@ -115,8 +129,12 @@ function QuotationWorksheet() {
       const nextRows = calc.rows.map((seed) => makeRow(seed.sn, seed))
       setRows(nextRows)
       setSelectedId(nextRows[0]?.id ?? null)
-      const storedRate = PROFIT_RATE_OPTIONS.find((rate) => rate === calc.profitRate)
-      setProfitRate(storedRate ?? 0.4)
+      // Saves from before the +1.5pt change hold 0.4/0.5/0.6; snap any
+      // stored value to the closest current option.
+      const storedRate = PROFIT_RATE_OPTIONS.reduce((best, rate) =>
+        Math.abs(rate - calc.profitRate) < Math.abs(best - calc.profitRate) ? rate : best,
+      )
+      setProfitRate(storedRate)
       setCalcId(calc.id)
       setCalcName(calc.name)
       setPanelOpen(false)
@@ -149,35 +167,29 @@ function QuotationWorksheet() {
     void refreshList(query)
   }
 
-  // One rollup per row, computed once and shared by the list, the editor AND
-  // the totals - never twice. Row objects are immutable (updateField replaces
-  // only the edited row's object), so a WeakMap keyed by row identity hands
-  // every untouched row its cached, identity-stable result - its memoized
-  // list row skips re-rendering - and only edited rows compute.
-  const [rollupCache] = useState(() => new WeakMap<WorksheetRow, CostRollupResults>())
-  const rowRollups = rows.map((row) => {
-    let result = rollupCache.get(row)
+  // One pricing core per row (MOQ, line value, freight), computed once and
+  // shared by the list, the editor AND the totals - never twice. Row objects
+  // are immutable (updateField replaces only the edited row's object), so a
+  // WeakMap keyed by row identity hands every untouched row its cached,
+  // identity-stable result - its memoized list row skips re-rendering - and
+  // only edited rows compute. Rate-dependent figures derive from the core.
+  const [coreCache] = useState(() => new WeakMap<WorksheetRow, PricingCore>())
+  const rowCores = rows.map((row) => {
+    let result = coreCache.get(row)
     if (!result) {
-      result = calculateCostRollup({
+      // Field names are interchanged in storage: `leadTime` is the unit price.
+      result = calculatePricingCore({
         moq: row.moq,
-        rate: row.leadTime,
+        unitPrice: row.leadTime,
         freight: row.freight,
-        clearance: row.clearance,
       })
-      rollupCache.set(row, result)
+      coreCache.set(row, result)
     }
     return result
   })
 
-  // Totals over priced line items, straight from the same rollup results.
-  const totals = calculateProfitTotals(
-    rows.map((row, index) => ({
-      moqRaw: excelCoerceNumber(row.moq),
-      totalUsd: rowRollups[index].totalUsd,
-      unitCost: rowRollups[index].unitCost,
-    })),
-    profitRate,
-  )
+  // Totals over priced line items, straight from the same pricing cores.
+  const totals = calculatePricingTotals(rowCores, profitRate)
 
   // Derive the selection so a removed row falls back gracefully.
   const selectedRow = rows.find((row) => row.id === selectedId) ?? rows[0] ?? null
@@ -210,9 +222,10 @@ function QuotationWorksheet() {
       <div className="hidden print:block">
         <QuoteDocument
           quoteName={calcName}
-          items={rows.map((row, index) => ({ row, rollup: rowRollups[index] }))}
+          items={rows.map((row, index) => ({ row, core: rowCores[index] }))}
           profitRate={profitRate}
           totals={totals}
+          display={display}
         />
       </div>
 
@@ -235,10 +248,13 @@ function QuotationWorksheet() {
           onDownloadPdf={() => window.print()}
         />
 
+        <ExchangeRateCard rate={exchangeRate} currency={currency} onCurrencyChange={setCurrency} />
+
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           <LineItemList
-            items={rows.map((row, index) => ({ row, rollup: rowRollups[index] }))}
+            items={rows.map((row, index) => ({ row, core: rowCores[index] }))}
             profitRate={profitRate}
+            display={display}
             selectedId={selectedRow?.id ?? null}
             onSelect={selectRow}
             onRemove={removeRow}
@@ -248,8 +264,9 @@ function QuotationWorksheet() {
           {selectedRow ? (
             <LineItemEditor
               row={selectedRow}
-              rollup={rowRollups[selectedIndex]}
+              core={rowCores[selectedIndex]}
               profitRate={profitRate}
+              display={display}
               onFieldChange={updateField}
             />
           ) : (
@@ -261,7 +278,7 @@ function QuotationWorksheet() {
           )}
         </div>
 
-        <SummaryCard totals={totals} profitRate={profitRate} />
+        <SummaryCard totals={totals} profitRate={profitRate} display={display} />
       </div>
     </div>
   )

@@ -8,6 +8,7 @@ export type CellValueKind = 'text' | 'integer' | 'decimal' | 'currency'
 export interface WorksheetRowSeed {
   sn: number
   partNumber: string
+  description: string
   moq: string
   condition: string
   unitPrice: string
