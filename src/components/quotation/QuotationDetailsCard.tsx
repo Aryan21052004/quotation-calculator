@@ -19,6 +19,8 @@ interface QuotationDetailsCardProps {
   statusMessage: string
   profitRate: ProfitRate
   onProfitRateChange: (rate: ProfitRate) => void
+  /** Opens the browser print dialog with the customer-facing quote. */
+  onDownloadPdf: () => void
 }
 
 /** Top card: quotation name, profit margin, and the saved-calculation actions. */
@@ -37,6 +39,7 @@ function QuotationDetailsCard({
   statusMessage,
   profitRate,
   onProfitRateChange,
+  onDownloadPdf,
 }: QuotationDetailsCardProps) {
   return (
     <SectionCard
@@ -90,6 +93,12 @@ function QuotationDetailsCard({
             {hasOpenCalculation ? 'Update' : 'Save'}
           </Button>
           {hasOpenCalculation && <Button onClick={() => onSave(true)}>Save as copy</Button>}
+          <Button
+            onClick={onDownloadPdf}
+            title="Opens your browser's print dialog — choose 'Save as PDF' to share the quote"
+          >
+            Download PDF
+          </Button>
           <Button onClick={onTogglePanel} aria-expanded={panelOpen}>
             {panelOpen ? 'Close list' : 'Open…'}
           </Button>

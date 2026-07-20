@@ -18,6 +18,13 @@
     'Noto Sans', sans-serif;
 }
 
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+}
+
 @layer base {
   body {
     background-color: var(--color-background);

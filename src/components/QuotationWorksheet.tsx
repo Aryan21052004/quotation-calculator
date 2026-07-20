@@ -18,6 +18,7 @@ import QuotationDetailsCard from './quotation/QuotationDetailsCard'
 import LineItemList from './quotation/LineItemList'
 import LineItemEditor from './quotation/LineItemEditor'
 import SummaryCard from './quotation/SummaryCard'
+import QuoteDocument from './quotation/QuoteDocument'
 import { SectionCard } from './ui'
 import type { EditableField, WorksheetRow } from './quotation/types'
 
@@ -203,51 +204,65 @@ function QuotationWorksheet() {
   const selectRow = useCallback((id: string) => setSelectedId(id), [])
 
   return (
-    <div className="space-y-6">
-      <QuotationDetailsCard
-        calcName={calcName}
-        onCalcNameChange={setCalcName}
-        hasOpenCalculation={calcId !== null}
-        onSave={(asNew) => void handleSave(asNew)}
-        panelOpen={panelOpen}
-        onTogglePanel={togglePanel}
-        searchQuery={searchQuery}
-        onSearchChange={handleSearchChange}
-        summaries={summaries}
-        onOpenCalculation={(id) => void handleOpen(id)}
-        onDeleteCalculation={(id, name) => void handleDelete(id, name)}
-        statusMessage={statusMessage}
-        profitRate={profitRate}
-        onProfitRateChange={setProfitRate}
-      />
-
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <LineItemList
+    <div className="space-y-6 print:space-y-0">
+      {/* Customer-facing quote: rendered only by the print dialog (the
+          Download PDF button), with internals (costs, margin) excluded. */}
+      <div className="hidden print:block">
+        <QuoteDocument
+          quoteName={calcName}
           items={rows.map((row, index) => ({ row, rollup: rowRollups[index] }))}
           profitRate={profitRate}
-          selectedId={selectedRow?.id ?? null}
-          onSelect={selectRow}
-          onRemove={removeRow}
-          onAdd={addRow}
+          totals={totals}
         />
-
-        {selectedRow ? (
-          <LineItemEditor
-            row={selectedRow}
-            rollup={rowRollups[selectedIndex]}
-            profitRate={profitRate}
-            onFieldChange={updateField}
-          />
-        ) : (
-          <SectionCard title="No item selected">
-            <p className="text-sm text-slate-500">
-              Add a line item to start building this quotation.
-            </p>
-          </SectionCard>
-        )}
       </div>
 
-      <SummaryCard totals={totals} profitRate={profitRate} />
+      <div className="space-y-6 print:hidden">
+        <QuotationDetailsCard
+          calcName={calcName}
+          onCalcNameChange={setCalcName}
+          hasOpenCalculation={calcId !== null}
+          onSave={(asNew) => void handleSave(asNew)}
+          panelOpen={panelOpen}
+          onTogglePanel={togglePanel}
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          summaries={summaries}
+          onOpenCalculation={(id) => void handleOpen(id)}
+          onDeleteCalculation={(id, name) => void handleDelete(id, name)}
+          statusMessage={statusMessage}
+          profitRate={profitRate}
+          onProfitRateChange={setProfitRate}
+          onDownloadPdf={() => window.print()}
+        />
+
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+          <LineItemList
+            items={rows.map((row, index) => ({ row, rollup: rowRollups[index] }))}
+            profitRate={profitRate}
+            selectedId={selectedRow?.id ?? null}
+            onSelect={selectRow}
+            onRemove={removeRow}
+            onAdd={addRow}
+          />
+
+          {selectedRow ? (
+            <LineItemEditor
+              row={selectedRow}
+              rollup={rowRollups[selectedIndex]}
+              profitRate={profitRate}
+              onFieldChange={updateField}
+            />
+          ) : (
+            <SectionCard title="No item selected">
+              <p className="text-sm text-slate-500">
+                Add a line item to start building this quotation.
+              </p>
+            </SectionCard>
+          )}
+        </div>
+
+        <SummaryCard totals={totals} profitRate={profitRate} />
+      </div>
     </div>
   )
 }
