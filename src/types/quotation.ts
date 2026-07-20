@@ -1,12 +1,3 @@
-export type ColumnGroup = 'input' | 'freight' | 'calc' | 'output' | 'profit'
-
-export interface WorksheetColumn {
-  letter: string
-  label: string
-  width: number
-  group: ColumnGroup
-}
-
 /** How an editable worksheet cell's raw string value should be validated. */
 export type CellValueKind = 'text' | 'integer' | 'decimal' | 'currency'
 

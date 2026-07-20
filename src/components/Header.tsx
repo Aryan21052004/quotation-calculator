@@ -1,21 +1,22 @@
 import { useAuth } from '../hooks/useAuth'
+import { Button } from './ui'
 
 function Header() {
   const { session, signOut } = useAuth()
 
   return (
-    <header className="border-b border-slate-200 bg-background">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <span className="text-lg font-semibold text-primary">Aerostratus</span>
-        {session && (
-          <button
-            type="button"
-            onClick={() => void signOut()}
-            className="rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-slate-50"
+    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/85 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <span className="flex items-center gap-2.5">
+          <span
+            aria-hidden="true"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-white"
           >
-            Logout
-          </button>
-        )}
+            A
+          </span>
+          <span className="text-lg font-semibold tracking-tight text-primary">Aerostratus</span>
+        </span>
+        {session && <Button onClick={() => void signOut()}>Logout</Button>}
       </div>
     </header>
   )

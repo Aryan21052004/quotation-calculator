@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { Card, WelcomeCard, SearchInput } from '../components'
+import { Button } from '../components/ui'
 
 function DashboardPage() {
   const { user } = useAuth()
@@ -9,16 +10,12 @@ function DashboardPage() {
   const [search, setSearch] = useState('')
 
   return (
-    <div className="w-full max-w-3xl space-y-6">
+    <div className="mx-auto w-full max-w-3xl space-y-6">
       <WelcomeCard name={user?.email ?? 'User'} />
 
-      <button
-        type="button"
-        onClick={() => navigate('/calculator')}
-        className="w-full rounded bg-primary px-4 py-3 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-primary/90 focus:ring-2 focus:ring-accent/40 focus:ring-offset-2 focus:outline-none sm:w-auto"
-      >
+      <Button variant="primary" onClick={() => navigate('/calculator')} className="w-full sm:w-auto">
         New Calculation
-      </button>
+      </Button>
 
       <Card title="Saved Calculations">
         <SearchInput
