@@ -38,10 +38,11 @@ export async function saveCalculation(
   name: string,
   profitRate: number,
   rows: WorksheetRowSeed[],
+  quotedBy: string,
 ): Promise<string> {
   const { data, error } = await supabase
     .from(TABLE)
-    .insert({ name: name.trim(), profit_rate: profitRate, rows })
+    .insert({ name: name.trim(), profit_rate: profitRate, rows, quoted_by: quotedBy.trim() })
     .select('id')
     .single()
   if (error) fail('Save', error.message)
@@ -52,7 +53,7 @@ export async function saveCalculation(
 export async function openCalculation(id: string): Promise<SavedCalculation> {
   const { data, error } = await supabase
     .from(TABLE)
-    .select('id, name, profit_rate, rows')
+    .select('id, name, profit_rate, quoted_by, rows')
     .eq('id', id)
     .single()
   if (error) fail('Open', error.message)
@@ -61,16 +62,18 @@ export async function openCalculation(id: string): Promise<SavedCalculation> {
     id: data.id as string,
     name: data.name as string,
     profitRate: Number(data.profit_rate),
+    quotedBy: typeof data.quoted_by === 'string' ? data.quoted_by : '',
     rows: storedRows.map(toRowSeed),
   }
 }
 
-/** Overwrite an existing calculation's name, rate, and rows. */
+/** Overwrite an existing calculation's name, rate, rows, and quoted-by. */
 export async function updateCalculation(
   id: string,
   name: string,
   profitRate: number,
   rows: WorksheetRowSeed[],
+  quotedBy: string,
 ): Promise<void> {
   const { error } = await supabase
     .from(TABLE)
@@ -78,6 +81,7 @@ export async function updateCalculation(
       name: name.trim(),
       profit_rate: profitRate,
       rows,
+      quoted_by: quotedBy.trim(),
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

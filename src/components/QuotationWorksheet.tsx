@@ -75,6 +75,7 @@ function QuotationWorksheet() {
   // its name, and the open/search panel.
   const [calcId, setCalcId] = useState<string | null>(null)
   const [calcName, setCalcName] = useState('')
+  const [quotedBy, setQuotedBy] = useState('')
   const [panelOpen, setPanelOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [summaries, setSummaries] = useState<CalculationSummary[]>([])
@@ -110,10 +111,10 @@ function QuotationWorksheet() {
     }
     try {
       if (!asNew && calcId) {
-        await updateCalculation(calcId, name, profitRate, rowSeeds())
+        await updateCalculation(calcId, name, profitRate, rowSeeds(), quotedBy)
         setStatusMessage(`Updated "${name}"`)
       } else {
-        const id = await saveCalculation(name, profitRate, rowSeeds())
+        const id = await saveCalculation(name, profitRate, rowSeeds(), quotedBy)
         setCalcId(id)
         setStatusMessage(`Saved "${name}"`)
       }
@@ -137,6 +138,7 @@ function QuotationWorksheet() {
       setProfitRate(storedRate)
       setCalcId(calc.id)
       setCalcName(calc.name)
+      setQuotedBy(calc.quotedBy)
       setPanelOpen(false)
       setStatusMessage(`Opened "${calc.name}"`)
     } catch (error) {
@@ -222,6 +224,7 @@ function QuotationWorksheet() {
       <div className="hidden print:block">
         <QuoteDocument
           quoteName={calcName}
+          quotedBy={quotedBy}
           items={rows.map((row, index) => ({ row, core: rowCores[index] }))}
           profitRate={profitRate}
           totals={totals}
@@ -233,6 +236,8 @@ function QuotationWorksheet() {
         <QuotationDetailsCard
           calcName={calcName}
           onCalcNameChange={setCalcName}
+          quotedBy={quotedBy}
+          onQuotedByChange={setQuotedBy}
           hasOpenCalculation={calcId !== null}
           onSave={(asNew) => void handleSave(asNew)}
           panelOpen={panelOpen}

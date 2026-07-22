@@ -6,6 +6,9 @@ import { Badge, Button, FormField, SectionCard, TextInput } from '../ui'
 interface QuotationDetailsCardProps {
   calcName: string
   onCalcNameChange: (name: string) => void
+  /** Person preparing the quote; printed on the customer-facing document. */
+  quotedBy: string
+  onQuotedByChange: (name: string) => void
   /** True when a stored calculation is open (Save becomes Update). */
   hasOpenCalculation: boolean
   onSave: (asNew: boolean) => void
@@ -27,6 +30,8 @@ interface QuotationDetailsCardProps {
 function QuotationDetailsCard({
   calcName,
   onCalcNameChange,
+  quotedBy,
+  onQuotedByChange,
   hasOpenCalculation,
   onSave,
   panelOpen,
@@ -60,6 +65,15 @@ function QuotationDetailsCard({
             value={calcName}
             placeholder="Untitled quotation"
             onChange={(event) => onCalcNameChange(event.target.value)}
+          />
+        </FormField>
+
+        <FormField label="Quoted by" htmlFor="quotation-quoted-by" className="w-full sm:w-56">
+          <TextInput
+            id="quotation-quoted-by"
+            value={quotedBy}
+            placeholder="e.g. Aryan"
+            onChange={(event) => onQuotedByChange(event.target.value)}
           />
         </FormField>
 

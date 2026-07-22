@@ -10,10 +10,14 @@ create table public.calculations (
   user_id    uuid not null default auth.uid() references auth.users (id) on delete cascade,
   name       text not null check (length(trim(name)) > 0),
   profit_rate numeric not null,
+  quoted_by  text not null default '',
   rows       jsonb not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Migration for tables created before quoted_by existed (2026-07-22):
+--   alter table public.calculations add column quoted_by text not null default '';
 
 alter table public.calculations enable row level security;
 

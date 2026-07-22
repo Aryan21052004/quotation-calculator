@@ -27,5 +27,7 @@ export interface SavedCalculation {
   id: string
   name: string
   profitRate: number
+  /** Name of the person who prepared the quote (may be empty on old saves). */
+  quotedBy: string
   rows: WorksheetRowSeed[]
 }

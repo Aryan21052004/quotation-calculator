@@ -15,6 +15,8 @@ import type { WorksheetRow } from './types'
 
 interface QuoteDocumentProps {
   quoteName: string
+  /** Person who prepared the quote; omitted from the header when blank. */
+  quotedBy: string
   items: { row: WorksheetRow; core: PricingCore }[]
   profitRate: ProfitRate
   totals: PricingTotals
@@ -26,7 +28,14 @@ interface QuoteDocumentProps {
  * PDF" button opens the browser's print dialog). Shows final prices only -
  * no costs, freight internals, or profit margin ever appear here.
  */
-function QuoteDocument({ quoteName, items, profitRate, totals, display }: QuoteDocumentProps) {
+function QuoteDocument({
+  quoteName,
+  quotedBy,
+  items,
+  profitRate,
+  totals,
+  display,
+}: QuoteDocumentProps) {
   const issuedOn = new Date().toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'long',
@@ -50,12 +59,16 @@ function QuoteDocument({ quoteName, items, profitRate, totals, display }: QuoteD
           <div>
             <p className="text-xl font-bold tracking-tight">Aryan Aviation and Air Part</p>
             <p className="text-xs text-slate-500">Aviation parts &amp; services</p>
+            <p className="text-xs text-slate-500">409 Pocket 2, Dwarka Sector 19, Delhi 110075</p>
           </div>
         </div>
         <div className="text-right">
           <p className="text-2xl font-bold tracking-tight uppercase">Quotation</p>
           <p className="mt-1 text-sm text-slate-500">{quoteName.trim() || 'Untitled quotation'}</p>
           <p className="text-sm text-slate-500">{issuedOn}</p>
+          {quotedBy.trim() !== '' && (
+            <p className="text-sm text-slate-500">Quoted by {quotedBy.trim()}</p>
+          )}
         </div>
       </header>
 
