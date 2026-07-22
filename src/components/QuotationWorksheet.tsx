@@ -38,7 +38,6 @@ function makeRow(sn: number, seed: Partial<WorksheetRow> = {}): WorksheetRow {
     unitPrice: '',
     leadTime: '',
     freight: '',
-    clearance: '',
     ...seed,
   }
 }
@@ -91,7 +90,6 @@ function QuotationWorksheet() {
       unitPrice: row.unitPrice,
       leadTime: row.leadTime,
       freight: row.freight,
-      clearance: row.clearance,
     }))
   }
 

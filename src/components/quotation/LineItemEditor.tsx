@@ -111,14 +111,6 @@ function LineItemEditor({ row, core, profitRate, display, onFieldChange }: LineI
             align="right"
             onFieldChange={onFieldChange}
           />
-          <EditableInput
-            row={row}
-            field="clearance"
-            label="Clearance & forex charges"
-            kind="decimal"
-            align="right"
-            onFieldChange={onFieldChange}
-          />
         </div>
       </SectionCard>
 

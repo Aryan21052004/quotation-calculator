@@ -29,7 +29,6 @@ function toRowSeed(value: unknown, index: number): WorksheetRowSeed {
     unitPrice: text('unitPrice'),
     leadTime: text('leadTime'),
     freight: text('freight'),
-    clearance: text('clearance'),
   }
 }
 

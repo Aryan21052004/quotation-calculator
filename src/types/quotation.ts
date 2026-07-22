@@ -14,7 +14,6 @@ export interface WorksheetRowSeed {
   unitPrice: string
   leadTime: string
   freight: string
-  clearance: string
 }
 
 export interface CalculationSummary {

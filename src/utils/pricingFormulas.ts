@@ -2,7 +2,7 @@
 // replacing the original workbook's cost-rollup chain:
 //
 //   Line value  = MOQ × Unit price
-//   Profit      = Line value × rate          (21.5% / 41.5% / 51.5% / 61.5%)
+//   Profit      = Line value × rate          (21.5% / 31.5% / 41.5% / 51.5% / 61.5%)
 //   Line total  = Line value + Profit + Freight
 //   Final price = Line total ÷ MOQ           (per unit)
 //
@@ -26,8 +26,8 @@ export function isError(value: CellResult): value is ExcelCalcError {
 }
 
 // Raised from 40/50/60 by 1.5 points on request (2026-07-20);
-// 21.5% option added on request (2026-07-22).
-export const PROFIT_RATE_OPTIONS = [0.215, 0.415, 0.515, 0.615] as const
+// 21.5% and 31.5% options added on request (2026-07-22).
+export const PROFIT_RATE_OPTIONS = [0.215, 0.315, 0.415, 0.515, 0.615] as const
 export type ProfitRate = (typeof PROFIT_RATE_OPTIONS)[number]
 
 /** Raw cell text of one row's pricing inputs. */
