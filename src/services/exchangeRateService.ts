@@ -10,8 +10,10 @@ const STORAGE_KEY = 'quotation-calculator:usd-inr-rate'
 export interface StoredRate {
   /** Raw market rate, ₹ per USD (never used for conversion directly). */
   liveRate: number
-  /** Epoch ms the rate was published (API timestamp; fetch time as fallback). */
+  /** Epoch ms of the successful fetch (what "Last updated" shows). */
   fetchedAt: number
+  /** Epoch ms the hourly rate was published by the API. */
+  publishedAt: number
 }
 
 export async function fetchLiveUsdInrRate(): Promise<StoredRate> {
@@ -24,13 +26,16 @@ export async function fetchLiveUsdInrRate(): Promise<StoredRate> {
   if (typeof rate !== 'number' || !Number.isFinite(rate) || rate <= 0) {
     throw new Error('Exchange rate API returned an unexpected payload')
   }
-  // The API stamps when the hourly rate was published (epoch seconds);
-  // surface that as "last updated" so the card reflects the rate's real age.
+  // The API stamps when the hourly rate was published (epoch seconds).
+  // Kept separately from the fetch time: the publish time lags up to ~80
+  // minutes behind the clock, so "Last updated" must reflect the fetch or
+  // the Refresh button appears to do nothing within an hour.
+  const now = Date.now()
   const publishedAt =
     typeof body.timestamp === 'number' && Number.isFinite(body.timestamp) && body.timestamp > 0
       ? body.timestamp * 1000
-      : Date.now()
-  return { liveRate: rate, fetchedAt: publishedAt }
+      : now
+  return { liveRate: rate, fetchedAt: now, publishedAt }
 }
 
 export function readCachedRate(): StoredRate | null {
@@ -46,7 +51,12 @@ export function readCachedRate(): StoredRate | null {
     ) {
       return null
     }
-    return { liveRate: parsed.liveRate, fetchedAt: parsed.fetchedAt }
+    // Caches written before publishedAt existed fall back to the fetch time.
+    const publishedAt =
+      typeof parsed.publishedAt === 'number' && Number.isFinite(parsed.publishedAt)
+        ? parsed.publishedAt
+        : parsed.fetchedAt
+    return { liveRate: parsed.liveRate, fetchedAt: parsed.fetchedAt, publishedAt }
   } catch {
     return null
   }

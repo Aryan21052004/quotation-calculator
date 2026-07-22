@@ -22,7 +22,8 @@ function formatLastUpdated(date: Date): string {
 
 /** Live USD → INR rate, the applied (+₹1) rate, and the display currency toggle. */
 function ExchangeRateCard({ rate, currency, onCurrencyChange }: ExchangeRateCardProps) {
-  const { liveRate, appliedRate, lastUpdated, refreshing, usingCachedRate, errorMessage } = rate
+  const { liveRate, appliedRate, lastUpdated, ratePublishedAt, refreshing, usingCachedRate, errorMessage } =
+    rate
 
   return (
     <SectionCard
@@ -73,6 +74,11 @@ function ExchangeRateCard({ rate, currency, onCurrencyChange }: ExchangeRateCard
         <RateTile
           label="Last updated"
           value={lastUpdated === null ? '—' : formatLastUpdated(lastUpdated)}
+          note={
+            ratePublishedAt === null
+              ? undefined
+              : `Rate published ${formatLastUpdated(ratePublishedAt)}`
+          }
         />
         <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200/70 bg-slate-50/80 p-4">
           <div className="min-w-0">

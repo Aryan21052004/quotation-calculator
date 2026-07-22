@@ -14,6 +14,8 @@ export interface ExchangeRate {
   appliedRate: number | null
   /** When the shown rate was successfully fetched. */
   lastUpdated: Date | null
+  /** When the API published the hourly rate (lags the clock by up to ~80 min). */
+  ratePublishedAt: Date | null
   /** True while a fetch is in flight. */
   refreshing: boolean
   /** True when the last fetch failed and the shown rate comes from cache. */
@@ -58,6 +60,7 @@ export function useExchangeRate(): ExchangeRate {
     liveRate: stored?.liveRate ?? null,
     appliedRate: stored ? toAppliedRate(stored.liveRate) : null,
     lastUpdated: stored ? new Date(stored.fetchedAt) : null,
+    ratePublishedAt: stored ? new Date(stored.publishedAt) : null,
     refreshing,
     usingCachedRate: lastFetchFailed && stored !== null,
     errorMessage:
