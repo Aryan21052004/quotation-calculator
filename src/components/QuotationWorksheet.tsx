@@ -57,7 +57,7 @@ function QuotationWorksheet() {
   const [selectedId, setSelectedId] = useState<string | null>(INITIAL_ROWS[0]?.id ?? null)
 
   // Display currency. All pricing stays in USD; INR is a display-time
-  // conversion with the applied (live + ₹1) exchange rate. INR only takes
+  // conversion with the applied (live + markup) exchange rate. INR only takes
   // effect once a rate is available; memoized so memoized list rows keep
   // identical props while the user types.
   const exchangeRate = useExchangeRate()

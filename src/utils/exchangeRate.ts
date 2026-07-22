@@ -1,8 +1,9 @@
-// USD → INR display conversion (business rule supplied 2026-07-20).
+// USD → INR display conversion (business rule supplied 2026-07-20;
+// markup raised from ₹1 to ₹1.50 on 2026-07-21).
 //
 // The app NEVER converts with the raw market rate. Every conversion uses
 //
-//   Applied rate = Live rate + ₹1
+//   Applied rate = Live rate + ₹1.50
 //
 // and happens at DISPLAY time only: all pricing math stays in USD exactly
 // as before (pricingFormulas untouched); INR is a presentation of the same
@@ -12,9 +13,9 @@
 import type { CellResult } from './pricingFormulas'
 
 /** Fixed markup added to the live rate, in ₹ per USD. */
-export const RATE_MARKUP_INR = 1
+export const RATE_MARKUP_INR = 1.5
 
-/** Applied rate = Live rate + ₹1 — the only rate conversions may use. */
+/** Applied rate = Live rate + the ₹ markup — the only rate conversions may use. */
 export function toAppliedRate(liveRate: number): number {
   return liveRate + RATE_MARKUP_INR
 }
@@ -24,7 +25,7 @@ export type DisplayCurrency = 'USD' | 'INR'
 /** How monetary values should be rendered: the currency and, for INR, the applied rate. */
 export interface CurrencyDisplay {
   currency: DisplayCurrency
-  /** Applied rate (live + ₹1); null until a rate has ever been fetched. */
+  /** Applied rate (live + ₹ markup); null until a rate has ever been fetched. */
   appliedRate: number | null
 }
 

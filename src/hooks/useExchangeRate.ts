@@ -10,7 +10,7 @@ import { toAppliedRate } from '../utils/exchangeRate'
 export interface ExchangeRate {
   /** Raw market rate, ₹ per USD; null until a rate has ever been fetched. */
   liveRate: number | null
-  /** Applied rate = live + ₹1 — the only rate conversions may use. */
+  /** Applied rate = live + ₹ markup — the only rate conversions may use. */
   appliedRate: number | null
   /** When the shown rate was successfully fetched. */
   lastUpdated: Date | null

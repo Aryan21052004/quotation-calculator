@@ -33,7 +33,7 @@ function QuoteDocument({ quoteName, items, profitRate, totals, display }: QuoteD
     day: 'numeric',
   })
   // Prices are calculated in USD as always; when INR is selected they are
-  // converted for display with the applied (live + ₹1) exchange rate.
+  // converted for display with the applied (live + markup) exchange rate.
   const ccy = display.currency
   const symbol = currencySymbol(display)
 
