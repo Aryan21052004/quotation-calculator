@@ -130,6 +130,24 @@ function QuoteDocument({
           </tr>
         </tfoot>
       </table>
+
+      <section className="mt-8 border-t border-slate-300 pt-4">
+        <h2 className="text-xs font-semibold tracking-wide uppercase">Terms &amp; Conditions</h2>
+        <dl className="mt-2 space-y-1 text-sm text-slate-600">
+          <div className="flex gap-2">
+            <dt className="w-32 shrink-0 font-medium text-slate-500">Payment</dt>
+            <dd>In advance</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="w-32 shrink-0 font-medium text-slate-500">Cost</dt>
+            <dd>Ex-Delhi (India)</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="w-32 shrink-0 font-medium text-slate-500">Quote validity</dt>
+            <dd>10 days subject to stock availability</dd>
+          </div>
+        </dl>
+      </section>
     </div>
   )
 }
