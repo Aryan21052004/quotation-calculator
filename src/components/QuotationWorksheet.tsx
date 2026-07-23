@@ -225,7 +225,6 @@ function QuotationWorksheet() {
           quotedBy={quotedBy}
           items={rows.map((row, index) => ({ row, core: rowCores[index] }))}
           profitRate={profitRate}
-          totals={totals}
           display={display}
         />
       </div>

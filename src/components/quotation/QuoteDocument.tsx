@@ -2,7 +2,6 @@ import {
   calculatePricingBreakdown,
   isError,
   type PricingCore,
-  type PricingTotals,
   type ProfitRate,
 } from '../../utils/pricingFormulas'
 import {
@@ -19,7 +18,6 @@ interface QuoteDocumentProps {
   quotedBy: string
   items: { row: WorksheetRow; core: PricingCore }[]
   profitRate: ProfitRate
-  totals: PricingTotals
   display: CurrencyDisplay
 }
 
@@ -33,7 +31,6 @@ function QuoteDocument({
   quotedBy,
   items,
   profitRate,
-  totals,
   display,
 }: QuoteDocumentProps) {
   const issuedOn = new Date().toLocaleDateString(undefined, {
@@ -47,9 +44,25 @@ function QuoteDocument({
   const symbol = currencySymbol(display)
 
   // Only lines a customer should see: anything identified or priced.
+  // The customer pays the unit price printed on the quote, so each amount is
+  // rounded-unit-price × qty and the total sums those amounts - the document
+  // must add up with the figures it shows, not the full-precision internals.
   const visibleItems = items
-    .map(({ row, core }) => ({ row, core, pricing: calculatePricingBreakdown(core, profitRate) }))
-    .filter(({ row, pricing }) => row.partNumber.trim() !== '' || !isError(pricing.finalPrice))
+    .map(({ row, core }) => {
+      const pricing = calculatePricingBreakdown(core, profitRate)
+      let unitPrice: number | null = null
+      let amount: number | null = null
+      if (!isError(pricing.finalPrice) && typeof core.moq === 'number' && core.moq > 0) {
+        const converted = convertForDisplay(pricing.finalPrice, display) as number
+        unitPrice = Math.round(converted * 100) / 100
+        amount = Math.round(unitPrice * core.moq * 100) / 100
+      }
+      return { row, unitPrice, amount }
+    })
+    .filter(({ row, unitPrice }) => row.partNumber.trim() !== '' || unitPrice !== null)
+
+  const grandTotal =
+    Math.round(visibleItems.reduce((sum, { amount }) => sum + (amount ?? 0), 0) * 100) / 100
 
   return (
     <div className="bg-white p-2 text-primary">
@@ -85,39 +98,31 @@ function QuoteDocument({
           </tr>
         </thead>
         <tbody>
-          {visibleItems.map(({ row, core, pricing }, index) => {
-            const priced =
-              !isError(pricing.lineTotal) && typeof core.moq === 'number' && core.moq > 0
-            return (
-              <tr key={row.id} className="border-b border-slate-200">
-                <td className="py-2.5 pr-3 text-slate-400">{index + 1}</td>
-                <td className="py-2.5 pr-3 font-medium">
-                  {row.partNumber || '—'}
-                  {row.description.trim() !== '' && (
-                    <span className="block text-xs font-normal text-slate-500">
-                      {row.description}
-                    </span>
-                  )}
-                </td>
-                <td className="py-2.5 pr-3">{row.condition || '—'}</td>
-                <td className="py-2.5 pr-3 text-right tabular-nums">
-                  {row.moq !== '' ? row.moq : '—'}
-                </td>
-                {/* Storage names are interchanged: `unitPrice` holds the lead time. */}
-                <td className="py-2.5 pr-3">{row.unitPrice !== '' ? row.unitPrice : '—'}</td>
-                <td className="py-2.5 pr-3 text-right tabular-nums">
-                  {isError(pricing.finalPrice)
-                    ? '—'
-                    : `${symbol}${(convertForDisplay(pricing.finalPrice, display) as number).toFixed(2)}`}
-                </td>
-                <td className="py-2.5 text-right font-medium tabular-nums">
-                  {priced
-                    ? `${symbol}${(convertForDisplay(pricing.lineTotal, display) as number).toFixed(2)}`
-                    : '—'}
-                </td>
-              </tr>
-            )
-          })}
+          {visibleItems.map(({ row, unitPrice, amount }, index) => (
+            <tr key={row.id} className="border-b border-slate-200">
+              <td className="py-2.5 pr-3 text-slate-400">{index + 1}</td>
+              <td className="py-2.5 pr-3 font-medium">
+                {row.partNumber || '—'}
+                {row.description.trim() !== '' && (
+                  <span className="block text-xs font-normal text-slate-500">
+                    {row.description}
+                  </span>
+                )}
+              </td>
+              <td className="py-2.5 pr-3">{row.condition || '—'}</td>
+              <td className="py-2.5 pr-3 text-right tabular-nums">
+                {row.moq !== '' ? row.moq : '—'}
+              </td>
+              {/* Storage names are interchanged: `unitPrice` holds the lead time. */}
+              <td className="py-2.5 pr-3">{row.unitPrice !== '' ? row.unitPrice : '—'}</td>
+              <td className="py-2.5 pr-3 text-right tabular-nums">
+                {unitPrice === null ? '—' : `${symbol}${unitPrice.toFixed(2)}`}
+              </td>
+              <td className="py-2.5 text-right font-medium tabular-nums">
+                {amount === null ? '—' : `${symbol}${amount.toFixed(2)}`}
+              </td>
+            </tr>
+          ))}
         </tbody>
         <tfoot>
           <tr>
@@ -125,7 +130,7 @@ function QuoteDocument({
             <td className="py-3 pr-3 text-right text-sm font-bold uppercase">Total</td>
             <td className="py-3 text-right text-base font-bold tabular-nums">
               {symbol}
-              {(convertForDisplay(totals.grandTotal, display) as number).toFixed(2)}
+              {grandTotal.toFixed(2)}
             </td>
           </tr>
         </tfoot>
