@@ -61,6 +61,8 @@ function QuotationWorksheet() {
   // identical props while the user types.
   const exchangeRate = useExchangeRate()
   const [currency, setCurrency] = useState<DisplayCurrency>('USD')
+  // When on, the printed quote shows every price in both USD and INR.
+  const [dualCurrency, setDualCurrency] = useState(false)
   const { appliedRate } = exchangeRate
   const display: CurrencyDisplay = useMemo(
     () => ({
@@ -226,6 +228,7 @@ function QuotationWorksheet() {
           items={rows.map((row, index) => ({ row, core: rowCores[index] }))}
           profitRate={profitRate}
           display={display}
+          dualCurrency={dualCurrency}
         />
       </div>
 
@@ -250,7 +253,13 @@ function QuotationWorksheet() {
           onDownloadPdf={() => window.print()}
         />
 
-        <ExchangeRateCard rate={exchangeRate} currency={currency} onCurrencyChange={setCurrency} />
+        <ExchangeRateCard
+          rate={exchangeRate}
+          currency={currency}
+          onCurrencyChange={setCurrency}
+          dualCurrency={dualCurrency}
+          onDualCurrencyChange={setDualCurrency}
+        />
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           <LineItemList
