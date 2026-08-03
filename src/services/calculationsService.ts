@@ -22,8 +22,9 @@ function toRowSeed(value: unknown, index: number): WorksheetRowSeed {
   return {
     sn: typeof record.sn === 'number' ? record.sn : index + 1,
     partNumber: text('partNumber'),
-    // Rows saved before the field existed simply read back as ''.
+    // Rows saved before the fields existed simply read back as ''.
     description: text('description'),
+    certificate: text('certificate'),
     moq: text('moq'),
     condition: text('condition'),
     unitPrice: text('unitPrice'),

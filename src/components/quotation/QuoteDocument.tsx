@@ -97,94 +97,125 @@ function QuoteDocument({
       : Math.round(visibleItems.reduce((sum, { alt }) => sum + (alt?.amount ?? 0), 0) * 100) / 100
 
   return (
-    <div className="bg-white p-2 text-primary">
-      <header className="flex items-start justify-between border-b-2 border-primary pb-6">
-        <div className="flex items-center gap-3">
-          <Logo className="h-11 w-11" />
+    <div className="quote-print bg-white p-2 text-navy">
+      <header className="flex items-start justify-between pb-7">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200/80 bg-slate-50">
+            <Logo className="h-9 w-9" />
+          </div>
           <div>
             <p className="text-xl font-bold tracking-tight">Aryan Aviation and Air Part</p>
-            <p className="text-xs text-slate-500">Aviation parts &amp; services</p>
+            <p className="mt-0.5 text-xs text-slate-500">Aviation parts &amp; services</p>
             <p className="text-xs text-slate-500">409 Pocket 2, Dwarka Sector 19, Delhi 110075</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-bold tracking-tight uppercase">Quotation</p>
-          <p className="mt-1 text-sm text-slate-500">{quoteName.trim() || 'Untitled quotation'}</p>
-          <p className="text-sm text-slate-500">{issuedOn}</p>
+          <p className="text-2xl font-bold tracking-[0.16em] uppercase">Quotation</p>
+          <p className="mt-1.5 text-sm">
+            <span className="font-semibold text-gold">Ref:</span>{' '}
+            <span className="font-medium">{quoteName.trim() || 'Untitled quotation'}</span>
+          </p>
+          <p className="mt-0.5 text-sm text-slate-500">{issuedOn}</p>
           {quotedBy.trim() !== '' && (
             <p className="text-sm text-slate-500">Quoted by {quotedBy.trim()}</p>
           )}
         </div>
       </header>
 
-      <table className="mt-8 w-full border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-slate-300 text-left text-xs tracking-wide text-slate-500 uppercase">
-            <th className="py-2 pr-3 font-semibold">#</th>
-            <th className="py-2 pr-3 font-semibold">Part number</th>
-            <th className="py-2 pr-3 font-semibold">Condition</th>
-            <th className="py-2 pr-3 text-right font-semibold">Qty</th>
-            <th className="py-2 pr-3 font-semibold">Lead time</th>
-            <th className="py-2 pr-3 text-right font-semibold">Unit price ({ccyLabel})</th>
-            <th className="py-2 text-right font-semibold">Amount ({ccyLabel})</th>
-          </tr>
-        </thead>
-        <tbody>
-          {visibleItems.map(({ row, main, alt }, index) => (
-            <tr key={row.id} className="border-b border-slate-200">
-              <td className="py-2.5 pr-3 text-slate-400">{index + 1}</td>
-              <td className="py-2.5 pr-3 font-medium">
-                {row.partNumber || '—'}
-                {row.description.trim() !== '' && (
-                  <span className="block text-xs font-normal text-slate-500">
-                    {row.description}
-                  </span>
-                )}
+      {/* Brand rule: short gold segment leading into the navy band. */}
+      <div className="flex h-1 overflow-hidden rounded-full">
+        <div className="w-28 bg-gold" />
+        <div className="flex-1 bg-navy" />
+      </div>
+
+      <div className="mt-9 overflow-hidden rounded-2xl border border-slate-200/80 shadow-soft">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="bg-navy text-left text-[11px] tracking-[0.08em] text-white uppercase">
+              <th className="py-3.5 pr-3 pl-5 font-semibold">#</th>
+              <th className="py-3.5 pr-3 font-semibold">Part number</th>
+              <th className="py-3.5 pr-3 font-semibold">Condition</th>
+              <th className="py-3.5 pr-3 text-right font-semibold">Qty</th>
+              <th className="py-3.5 pr-3 font-semibold">Lead time</th>
+              <th className="py-3.5 pr-3 text-right font-semibold">Unit price ({ccyLabel})</th>
+              <th className="py-3.5 pr-5 text-right font-semibold">Amount ({ccyLabel})</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleItems.map(({ row, main, alt }, index) => (
+              <tr key={row.id} className="border-b border-slate-100">
+                <td className="py-3.5 pr-3 pl-5 text-slate-400">{index + 1}</td>
+                <td className="py-3.5 pr-3 font-semibold">
+                  {row.partNumber || '—'}
+                  {row.description.trim() !== '' && (
+                    <span className="block text-xs font-normal text-slate-500">
+                      {row.description}
+                    </span>
+                  )}
+                  {row.certificate.trim() !== '' && (
+                    <span className="block text-xs font-normal text-slate-500">
+                      Cert: {row.certificate}
+                    </span>
+                  )}
+                </td>
+                <td className="py-3.5 pr-3">
+                  {row.condition ? (
+                    <span className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium">
+                      {row.condition}
+                    </span>
+                  ) : (
+                    '—'
+                  )}
+                </td>
+                <td className="py-3.5 pr-3 text-right tabular-nums">
+                  {row.moq !== '' ? row.moq : '—'}
+                </td>
+                {/* Storage names are interchanged: `unitPrice` holds the lead time. */}
+                <td className="py-3.5 pr-3">{row.unitPrice !== '' ? row.unitPrice : '—'}</td>
+                <td className="py-3.5 pr-3 text-right tabular-nums">
+                  {main === null ? '—' : formatMoney(main.unitPrice, display)}
+                  {alt !== null && secondary !== null && (
+                    <span className="block text-xs text-slate-500">
+                      {formatMoney(alt.unitPrice, secondary)}
+                    </span>
+                  )}
+                </td>
+                <td className="py-3.5 pr-5 text-right font-semibold tabular-nums">
+                  {main === null ? '—' : formatMoney(main.amount, display)}
+                  {alt !== null && secondary !== null && (
+                    <span className="block text-xs font-normal text-slate-500">
+                      {formatMoney(alt.amount, secondary)}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="bg-navy">
+              <td colSpan={5} className="py-4 pl-5" />
+              <td className="py-4 pr-3 text-right text-xs font-semibold tracking-[0.14em] text-white/80 uppercase">
+                Total
               </td>
-              <td className="py-2.5 pr-3">{row.condition || '—'}</td>
-              <td className="py-2.5 pr-3 text-right tabular-nums">
-                {row.moq !== '' ? row.moq : '—'}
-              </td>
-              {/* Storage names are interchanged: `unitPrice` holds the lead time. */}
-              <td className="py-2.5 pr-3">{row.unitPrice !== '' ? row.unitPrice : '—'}</td>
-              <td className="py-2.5 pr-3 text-right tabular-nums">
-                {main === null ? '—' : formatMoney(main.unitPrice, display)}
-                {alt !== null && secondary !== null && (
-                  <span className="block text-xs text-slate-500">
-                    {formatMoney(alt.unitPrice, secondary)}
-                  </span>
-                )}
-              </td>
-              <td className="py-2.5 text-right font-medium tabular-nums">
-                {main === null ? '—' : formatMoney(main.amount, display)}
-                {alt !== null && secondary !== null && (
-                  <span className="block text-xs font-normal text-slate-500">
-                    {formatMoney(alt.amount, secondary)}
+              <td className="py-4 pr-5 text-right text-base font-bold text-gold tabular-nums">
+                {formatMoney(grandTotal, display)}
+                {altGrandTotal !== null && secondary !== null && (
+                  <span className="block text-sm font-semibold text-white/70">
+                    {formatMoney(altGrandTotal, secondary)}
                   </span>
                 )}
               </td>
             </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colSpan={5} />
-            <td className="py-3 pr-3 text-right text-sm font-bold uppercase">Total</td>
-            <td className="py-3 text-right text-base font-bold tabular-nums">
-              {formatMoney(grandTotal, display)}
-              {altGrandTotal !== null && secondary !== null && (
-                <span className="block text-sm font-semibold text-slate-500">
-                  {formatMoney(altGrandTotal, secondary)}
-                </span>
-              )}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+          </tfoot>
+        </table>
+      </div>
 
-      <section className="mt-8 border-t border-slate-300 pt-4">
-        <h2 className="text-xs font-semibold tracking-wide uppercase">Terms &amp; Conditions</h2>
-        <ol className="mt-2 space-y-1 text-sm text-slate-600">
+      <section className="mt-8 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-5">
+        <h2 className="flex items-center gap-2 text-xs font-semibold tracking-[0.1em] uppercase">
+          <span className="h-3.5 w-1 rounded-full bg-gold" />
+          Terms &amp; Conditions
+        </h2>
+        <ol className="mt-2.5 space-y-1 text-sm text-slate-600">
           <li>1. Payment: In advance</li>
           <li>2. Cost: Ex-Delhi (India)</li>
           <li>3. Quote validity: 10 days subject to stock availability</li>

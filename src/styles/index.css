@@ -6,6 +6,10 @@
   --color-primary: #0a2540;
   --color-accent: #0ea5e9;
 
+  /* Printed quotation brand colors (design brief 2026-08-03) */
+  --color-navy: #0b1f3a;
+  --color-gold: #c9a227;
+
   /* Border radius */
   --radius: 16px;
 
@@ -22,6 +26,14 @@
   @page {
     size: A4;
     margin: 14mm;
+  }
+
+  /* The quote's navy/gold fills must survive the printer's default of
+     stripping backgrounds - without this the PDF loses the brand bands. */
+  .quote-print,
+  .quote-print * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }
 

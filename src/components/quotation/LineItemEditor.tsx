@@ -63,6 +63,15 @@ function LineItemEditor({ row, core, profitRate, display, onFieldChange }: LineI
               onChange={(event) => onFieldChange(row.id, 'description', event.target.value)}
             />
           </FormField>
+          <EditableInput
+            row={row}
+            field="certificate"
+            label="Certificate"
+            kind="text"
+            placeholder="e.g. CoC / FAA 8130-3 / EASA Form 1"
+            onFieldChange={onFieldChange}
+            className="sm:col-span-2"
+          />
           <FormField label="Condition" htmlFor={`item-${row.id}-condition`}>
             <SelectInput
               id={`item-${row.id}-condition`}

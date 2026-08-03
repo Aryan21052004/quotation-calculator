@@ -9,6 +9,7 @@ export interface WorksheetRowSeed {
   sn: number
   partNumber: string
   description: string
+  certificate: string
   moq: string
   condition: string
   unitPrice: string
