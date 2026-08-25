@@ -25,6 +25,11 @@ interface QuoteDocumentProps {
    * days when the "Net 15 days payment" switch is on.
    */
   net15Payment: boolean
+  /**
+   * Cost term printed in the terms list: Ex-Delhi by default, or DAP MOW
+   * when the "DAP MOW" switch is on.
+   */
+  dapMowCost: boolean
 }
 
 /** Unit price and amount for one row in one currency, rounded so they multiply out. */
@@ -61,6 +66,7 @@ function QuoteDocument({
   display,
   dualCurrency,
   net15Payment,
+  dapMowCost,
 }: QuoteDocumentProps) {
   const issuedOn = new Date().toLocaleDateString(undefined, {
     year: 'numeric',
@@ -228,7 +234,7 @@ function QuoteDocument({
         </h2>
         <ol className="mt-2.5 space-y-1 text-sm text-slate-600">
           <li>1. Payment: {net15Payment ? 'Net 15 days' : 'In advance'}</li>
-          <li>2. Cost: Ex-Delhi (India)</li>
+          <li>2. Cost: {dapMowCost ? 'DAP MOW' : 'Ex-Delhi (India)'}</li>
           <li>3. Quote validity: 10 days subject to stock availability</li>
         </ol>
       </section>

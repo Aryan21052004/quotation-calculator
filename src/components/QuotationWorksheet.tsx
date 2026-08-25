@@ -18,6 +18,7 @@ import type { CurrencyDisplay, DisplayCurrency } from '../utils/exchangeRate'
 import { useExchangeRate } from '../hooks/useExchangeRate'
 import ExchangeRateCard from './quotation/ExchangeRateCard'
 import QuotationDetailsCard from './quotation/QuotationDetailsCard'
+import QuoteOptionsCard from './quotation/QuoteOptionsCard'
 import LineItemList from './quotation/LineItemList'
 import LineItemEditor from './quotation/LineItemEditor'
 import SummaryCard from './quotation/SummaryCard'
@@ -67,6 +68,8 @@ function QuotationWorksheet() {
   const [dualCurrency, setDualCurrency] = useState(false)
   // When on, the printed quote's payment term is "Net 15 days", not "In advance".
   const [net15Payment, setNet15Payment] = useState(false)
+  // When on, the printed quote's cost term is "DAP MOW", not "Ex-Delhi (India)".
+  const [dapMowCost, setDapMowCost] = useState(false)
   const { appliedRate } = exchangeRate
   const display: CurrencyDisplay = useMemo(
     () => ({
@@ -236,6 +239,7 @@ function QuotationWorksheet() {
           display={display}
           dualCurrency={dualCurrency}
           net15Payment={net15Payment}
+          dapMowCost={dapMowCost}
         />
       </div>
 
@@ -257,17 +261,19 @@ function QuotationWorksheet() {
           statusMessage={statusMessage}
           profitRate={profitRate}
           onProfitRateChange={setProfitRate}
-          net15Payment={net15Payment}
-          onNet15PaymentChange={setNet15Payment}
           onDownloadPdf={() => window.print()}
         />
 
-        <ExchangeRateCard
-          rate={exchangeRate}
-          currency={currency}
-          onCurrencyChange={setCurrency}
+        <ExchangeRateCard rate={exchangeRate} currency={currency} onCurrencyChange={setCurrency} />
+
+        <QuoteOptionsCard
           dualCurrency={dualCurrency}
           onDualCurrencyChange={setDualCurrency}
+          exchangeRateReady={appliedRate !== null}
+          net15Payment={net15Payment}
+          onNet15PaymentChange={setNet15Payment}
+          dapMowCost={dapMowCost}
+          onDapMowCostChange={setDapMowCost}
         />
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">

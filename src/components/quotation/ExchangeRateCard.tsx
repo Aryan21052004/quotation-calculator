@@ -1,6 +1,6 @@
 import type { ExchangeRate } from '../../hooks/useExchangeRate'
 import { RATE_MARKUP_INR, type DisplayCurrency } from '../../utils/exchangeRate'
-import { Badge, Button, SectionCard, Switch } from '../ui'
+import { Badge, Button, SectionCard } from '../ui'
 
 const CURRENCY_OPTIONS: DisplayCurrency[] = ['USD', 'INR']
 
@@ -8,9 +8,6 @@ interface ExchangeRateCardProps {
   rate: ExchangeRate
   currency: DisplayCurrency
   onCurrencyChange: (currency: DisplayCurrency) => void
-  /** When on, the printed quote shows every price in both USD and INR. */
-  dualCurrency: boolean
-  onDualCurrencyChange: (on: boolean) => void
 }
 
 function formatRate(value: number): string {
@@ -28,13 +25,7 @@ function formatLastUpdated(date: Date): string {
 }
 
 /** Live USD → INR rate, the applied (+₹1) rate, and the display currency toggle. */
-function ExchangeRateCard({
-  rate,
-  currency,
-  onCurrencyChange,
-  dualCurrency,
-  onDualCurrencyChange,
-}: ExchangeRateCardProps) {
+function ExchangeRateCard({ rate, currency, onCurrencyChange }: ExchangeRateCardProps) {
   const {
     liveRate,
     appliedRate,
@@ -80,22 +71,6 @@ function ExchangeRateCard({
               )
             })}
           </div>
-          <label
-            className={`mt-2.5 flex items-center justify-end gap-2 text-[13px] font-medium ${
-              appliedRate === null
-                ? 'cursor-not-allowed text-slate-400'
-                : 'cursor-pointer text-slate-600'
-            }`}
-            title={appliedRate === null ? 'Waiting for an exchange rate' : undefined}
-          >
-            Both currencies on quote
-            <Switch
-              checked={dualCurrency}
-              onChange={onDualCurrencyChange}
-              ariaLabel="Both currencies on quote"
-              disabled={appliedRate === null}
-            />
-          </label>
         </div>
       }
     >
