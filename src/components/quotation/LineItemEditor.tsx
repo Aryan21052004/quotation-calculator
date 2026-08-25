@@ -76,7 +76,6 @@ function LineItemEditor({ row, core, profitRate, display, onFieldChange }: LineI
             <TextArea
               id={`item-${row.id}-remarks`}
               value={row.remarks}
-              placeholder="e.g. Traceable to airline teardown; MOQ negotiable"
               onChange={(event) => onFieldChange(row.id, 'remarks', event.target.value)}
             />
           </FormField>
