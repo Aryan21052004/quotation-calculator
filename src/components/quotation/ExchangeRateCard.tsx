@@ -1,6 +1,6 @@
 import type { ExchangeRate } from '../../hooks/useExchangeRate'
 import { RATE_MARKUP_INR, type DisplayCurrency } from '../../utils/exchangeRate'
-import { Badge, Button, SectionCard } from '../ui'
+import { Badge, Button, SectionCard, Switch } from '../ui'
 
 const CURRENCY_OPTIONS: DisplayCurrency[] = ['USD', 'INR']
 
@@ -89,22 +89,12 @@ function ExchangeRateCard({
             title={appliedRate === null ? 'Waiting for an exchange rate' : undefined}
           >
             Both currencies on quote
-            <button
-              type="button"
-              role="switch"
-              aria-checked={dualCurrency}
+            <Switch
+              checked={dualCurrency}
+              onChange={onDualCurrencyChange}
+              ariaLabel="Both currencies on quote"
               disabled={appliedRate === null}
-              onClick={() => onDualCurrencyChange(!dualCurrency)}
-              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
-                dualCurrency ? 'bg-primary' : 'bg-slate-300'
-              }`}
-            >
-              <span
-                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
-                  dualCurrency ? 'translate-x-[18px]' : 'translate-x-1'
-                }`}
-              />
-            </button>
+            />
           </label>
         </div>
       }

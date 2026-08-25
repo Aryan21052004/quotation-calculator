@@ -1,7 +1,7 @@
 import type { CalculationSummary } from '../../types'
 import { PROFIT_RATE_OPTIONS, type ProfitRate } from '../../utils/pricingFormulas'
 import SearchInput from '../SearchInput'
-import { Badge, Button, FormField, SectionCard, TextInput } from '../ui'
+import { Badge, Button, FormField, SectionCard, Switch, TextInput } from '../ui'
 
 interface QuotationDetailsCardProps {
   calcName: string
@@ -22,6 +22,9 @@ interface QuotationDetailsCardProps {
   statusMessage: string
   profitRate: ProfitRate
   onProfitRateChange: (rate: ProfitRate) => void
+  /** When on, the quote's payment term reads "Net 15 days" instead of "In advance". */
+  net15Payment: boolean
+  onNet15PaymentChange: (on: boolean) => void
   /** Opens the browser print dialog with the customer-facing quote. */
   onDownloadPdf: () => void
 }
@@ -44,6 +47,8 @@ function QuotationDetailsCard({
   statusMessage,
   profitRate,
   onProfitRateChange,
+  net15Payment,
+  onNet15PaymentChange,
   onDownloadPdf,
 }: QuotationDetailsCardProps) {
   return (
@@ -100,6 +105,18 @@ function QuotationDetailsCard({
               </button>
             ))}
           </div>
+        </div>
+
+        <div>
+          <span className="block text-[13px] font-medium text-slate-600">Payment terms</span>
+          <label className="mt-1.5 flex h-[34px] cursor-pointer items-center gap-2 text-[13px] font-medium text-slate-600">
+            <Switch
+              checked={net15Payment}
+              onChange={onNet15PaymentChange}
+              ariaLabel="Net 15 days payment terms"
+            />
+            {net15Payment ? 'Net 15 days' : 'In advance'}
+          </label>
         </div>
 
         <div className="ml-auto flex flex-wrap gap-2">

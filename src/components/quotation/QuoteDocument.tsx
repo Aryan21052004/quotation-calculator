@@ -20,6 +20,11 @@ interface QuoteDocumentProps {
    * in both currencies: the selected one first, the other beneath it.
    */
   dualCurrency: boolean
+  /**
+   * Payment term printed in the terms list: advance by default, or net 15
+   * days when the "Net 15 days payment" switch is on.
+   */
+  net15Payment: boolean
 }
 
 /** Unit price and amount for one row in one currency, rounded so they multiply out. */
@@ -55,6 +60,7 @@ function QuoteDocument({
   profitRate,
   display,
   dualCurrency,
+  net15Payment,
 }: QuoteDocumentProps) {
   const issuedOn = new Date().toLocaleDateString(undefined, {
     year: 'numeric',
@@ -135,7 +141,7 @@ function QuoteDocument({
               <th className="py-3.5 pr-3 pl-5 font-semibold">#</th>
               <th className="py-3.5 pr-3 font-semibold">Part number</th>
               <th className="py-3.5 pr-3 font-semibold">Condition</th>
-              <th className="py-3.5 pr-3 text-right font-semibold">Qty</th>
+              <th className="py-3.5 pr-7 text-right font-semibold">Qty</th>
               <th className="py-3.5 pr-3 font-semibold">Lead time</th>
               <th className="py-3.5 pr-3 text-right font-semibold">Unit price ({ccyLabel})</th>
               <th className="py-3.5 pr-5 text-right font-semibold">Amount ({ccyLabel})</th>
@@ -167,7 +173,7 @@ function QuoteDocument({
                     '—'
                   )}
                 </td>
-                <td className="py-3.5 pr-3 text-right tabular-nums">
+                <td className="py-3.5 pr-7 text-right tabular-nums">
                   {row.moq !== '' ? row.moq : '—'}
                 </td>
                 {/* Storage names are interchanged: `unitPrice` holds the lead time. */}
@@ -216,7 +222,7 @@ function QuoteDocument({
           Terms &amp; Conditions
         </h2>
         <ol className="mt-2.5 space-y-1 text-sm text-slate-600">
-          <li>1. Payment: In advance</li>
+          <li>1. Payment: {net15Payment ? 'Net 15 days' : 'In advance'}</li>
           <li>2. Cost: Ex-Delhi (India)</li>
           <li>3. Quote validity: 10 days subject to stock availability</li>
         </ol>

@@ -64,6 +64,8 @@ function QuotationWorksheet() {
   const [currency, setCurrency] = useState<DisplayCurrency>('USD')
   // When on, the printed quote shows every price in both USD and INR.
   const [dualCurrency, setDualCurrency] = useState(false)
+  // When on, the printed quote's payment term is "Net 15 days", not "In advance".
+  const [net15Payment, setNet15Payment] = useState(false)
   const { appliedRate } = exchangeRate
   const display: CurrencyDisplay = useMemo(
     () => ({
@@ -231,6 +233,7 @@ function QuotationWorksheet() {
           profitRate={profitRate}
           display={display}
           dualCurrency={dualCurrency}
+          net15Payment={net15Payment}
         />
       </div>
 
@@ -252,6 +255,8 @@ function QuotationWorksheet() {
           statusMessage={statusMessage}
           profitRate={profitRate}
           onProfitRateChange={setProfitRate}
+          net15Payment={net15Payment}
+          onNet15PaymentChange={setNet15Payment}
           onDownloadPdf={() => window.print()}
         />
 
