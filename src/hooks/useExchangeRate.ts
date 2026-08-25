@@ -30,7 +30,7 @@ export interface ExchangeRate {
 const NO_RATES: LiveRates = {}
 
 /**
- * Live USD → INR/EUR/GBP/RUB exchange rates: fetched once on mount, refreshed
+ * Live USD → INR and EUR exchange rates: fetched once on mount, refreshed
  * on demand. A failed fetch keeps the last successful rates (in-memory or
  * localStorage) and flags them as cached instead of dropping to no rates.
  */

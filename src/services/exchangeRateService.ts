@@ -2,8 +2,8 @@
 // CORS-open, refreshed hourly — replaced the once-daily open.er-api.com on
 // 2026-07-22) and persist the last successful fetch in localStorage so a
 // failed fetch — even on a fresh page load — can fall back to the cached
-// rates. One request returns every currency, so EUR/GBP/RUB cost no extra
-// round trip beyond the INR rate the app already fetched.
+// rates. One request returns every currency, so EUR costs no extra round
+// trip beyond the INR rate the app already fetched.
 
 import { FOREIGN_CURRENCIES, type LiveRates } from '../utils/exchangeRate'
 

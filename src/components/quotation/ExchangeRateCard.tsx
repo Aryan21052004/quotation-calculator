@@ -16,9 +16,8 @@ interface ExchangeRateCardProps {
   onCurrencyChange: (currency: DisplayCurrency) => void
 }
 
-/** Rupee amounts: 2 decimals normally, 4 where one unit is worth about ₹1. */
 function formatRupees(value: number, currency: DisplayCurrency): string {
-  return `₹${value.toFixed(value < 10 ? 4 : 2)} / ${currency}`
+  return `₹${value.toFixed(2)} / ${currency}`
 }
 
 function formatLastUpdated(date: Date): string {
@@ -81,7 +80,7 @@ function ExchangeRateCard({ rate, currency, onCurrencyChange }: ExchangeRateCard
         </div>
       }
     >
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2">
         {INR_QUOTED_CURRENCIES.map((option) => (
           <RateTile
             key={option}

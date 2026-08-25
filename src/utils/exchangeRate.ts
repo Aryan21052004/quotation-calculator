@@ -1,5 +1,5 @@
 // Display-currency conversion (business rule supplied 2026-07-20; markup
-// raised from ₹1 to ₹1.50 on 2026-07-21; EUR/GBP/RUB added 2026-08-25).
+// raised from ₹1 to ₹1.50 on 2026-07-21; EUR added 2026-08-25).
 //
 // The app NEVER converts with the raw market rate. Every rate the business
 // quotes at is the market rate for one unit of that currency, in rupees,
@@ -9,11 +9,6 @@
 //
 //   USD  ₹95.70 + ₹1.50 = ₹97.20 per USD
 //   EUR  ₹111.58 + ₹1.50 = ₹113.08 per EUR
-//   GBP  ₹130.53 + ₹1.50 = ₹132.03 per GBP
-//   RUB  ₹1.1312 + ₹0.03 = ₹1.1612 per RUB
-//
-// The markup is smaller for roubles because one rouble is worth about a
-// rupee — ₹1.50 on top of ₹1.13 would more than double it (user, 2026-08-25).
 //
 // The markup belongs to the FOREIGN currency, never to the rupee: there is no
 // INR markup of its own (user, 2026-08-25). A rupee quote converts USD→INR
@@ -32,7 +27,7 @@
 import type { CellResult } from './pricingFormulas'
 
 /** Currencies a quote can be shown in. USD is the currency pricing is done in. */
-export type DisplayCurrency = 'USD' | 'INR' | 'EUR' | 'GBP' | 'RUB'
+export type DisplayCurrency = 'USD' | 'INR' | 'EUR'
 
 /** Everything except USD needs a fetched rate to be displayable. */
 export type ForeignCurrency = Exclude<DisplayCurrency, 'USD'>
@@ -40,9 +35,9 @@ export type ForeignCurrency = Exclude<DisplayCurrency, 'USD'>
 /** Currencies quoted against the rupee. INR is the base, so it is not one. */
 export type QuotedAgainstInr = Exclude<DisplayCurrency, 'INR'>
 
-export const DISPLAY_CURRENCIES: DisplayCurrency[] = ['USD', 'INR', 'EUR', 'GBP', 'RUB']
-export const FOREIGN_CURRENCIES: ForeignCurrency[] = ['INR', 'EUR', 'GBP', 'RUB']
-export const INR_QUOTED_CURRENCIES: QuotedAgainstInr[] = ['USD', 'EUR', 'GBP', 'RUB']
+export const DISPLAY_CURRENCIES: DisplayCurrency[] = ['USD', 'INR', 'EUR']
+export const FOREIGN_CURRENCIES: ForeignCurrency[] = ['INR', 'EUR']
+export const INR_QUOTED_CURRENCIES: QuotedAgainstInr[] = ['USD', 'EUR']
 
 /**
  * Markup added to each foreign currency's rupee rate, in ₹ per unit of that
@@ -52,8 +47,6 @@ export const INR_QUOTED_CURRENCIES: QuotedAgainstInr[] = ['USD', 'EUR', 'GBP', '
 export const RATE_MARKUP_INR: Record<QuotedAgainstInr, number> = {
   USD: 1.5,
   EUR: 1.5,
-  GBP: 1.5,
-  RUB: 0.03,
 }
 
 /**
@@ -67,8 +60,6 @@ const SYMBOLS: Record<DisplayCurrency, string> = {
   USD: '$',
   INR: '₹',
   EUR: '€',
-  GBP: '£',
-  RUB: '₽',
 }
 
 /**
