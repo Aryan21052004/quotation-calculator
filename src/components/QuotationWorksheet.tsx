@@ -58,26 +58,37 @@ function QuotationWorksheet() {
   const [profitRate, setProfitRate] = useState<ProfitRate>(0.415)
   const [selectedId, setSelectedId] = useState<string | null>(INITIAL_ROWS[0]?.id ?? null)
 
-  // Display currency. All pricing stays in USD; INR is a display-time
-  // conversion with the applied (live + markup) exchange rate. INR only takes
-  // effect once a rate is available; memoized so memoized list rows keep
-  // identical props while the user types.
+  // Display currency. All pricing stays in USD; INR/EUR/GBP/RUB are
+  // display-time conversions with that currency's applied (live + markup)
+  // rate. A foreign currency only takes effect once its rate is available;
+  // memoized so memoized list rows keep identical props while the user types.
   const exchangeRate = useExchangeRate()
   const [currency, setCurrency] = useState<DisplayCurrency>('USD')
-  // When on, the printed quote shows every price in both USD and INR.
+  // When on, the printed quote shows every price in two currencies.
   const [dualCurrency, setDualCurrency] = useState(false)
   // When on, the printed quote's payment term is "Net 15 days", not "In advance".
   const [net15Payment, setNet15Payment] = useState(false)
   // When on, the printed quote's cost term is "DAP MOW", not "Ex-Delhi (India)".
   const [dapMowCost, setDapMowCost] = useState(false)
-  const { appliedRate } = exchangeRate
-  const display: CurrencyDisplay = useMemo(
-    () => ({
-      currency: currency === 'INR' && appliedRate !== null ? 'INR' : 'USD',
-      appliedRate,
-    }),
-    [currency, appliedRate],
-  )
+  const { appliedRates } = exchangeRate
+  const display: CurrencyDisplay = useMemo(() => {
+    // `appliedRates` already carries the markup - deriving it again here
+    // would charge it twice.
+    const appliedRate = currency === 'USD' ? null : (appliedRates[currency] ?? null)
+    // Falls back to USD when the selected currency has no rate yet, so a
+    // quote is never priced with a missing conversion.
+    return appliedRate === null ? { currency: 'USD', appliedRate: null } : { currency, appliedRate }
+  }, [currency, appliedRates])
+
+  // The second currency printed under each price in dual-currency mode: USD
+  // when a foreign currency is shown, and INR when USD is - so the pairing is
+  // always "what was quoted" against "what it costs at home".
+  const alternate: CurrencyDisplay | null = useMemo(() => {
+    if (!dualCurrency) return null
+    if (display.currency !== 'USD') return { currency: 'USD', appliedRate: null }
+    const inrRate = appliedRates.INR
+    return inrRate === undefined ? null : { currency: 'INR', appliedRate: inrRate }
+  }, [dualCurrency, display.currency, appliedRates])
 
   // Saved-calculation state: which stored calculation (if any) is open,
   // its name, and the open/search panel.
@@ -237,7 +248,7 @@ function QuotationWorksheet() {
           items={rows.map((row, index) => ({ row, core: rowCores[index] }))}
           profitRate={profitRate}
           display={display}
-          dualCurrency={dualCurrency}
+          alternate={alternate}
           net15Payment={net15Payment}
           dapMowCost={dapMowCost}
         />
@@ -269,7 +280,10 @@ function QuotationWorksheet() {
         <QuoteOptionsCard
           dualCurrency={dualCurrency}
           onDualCurrencyChange={setDualCurrency}
-          exchangeRateReady={appliedRate !== null}
+          exchangeRateReady={exchangeRate.hasRates}
+          currencyPairLabel={
+            display.currency === 'USD' ? 'USD and INR' : `${display.currency} and USD`
+          }
           net15Payment={net15Payment}
           onNet15PaymentChange={setNet15Payment}
           dapMowCost={dapMowCost}

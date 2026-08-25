@@ -4,7 +4,12 @@ import {
   type PricingCore,
   type ProfitRate,
 } from '../../utils/pricingFormulas'
-import { convertForDisplay, currencySymbol, type CurrencyDisplay } from '../../utils/exchangeRate'
+import {
+  convertForDisplay,
+  currencyLocale,
+  currencySymbol,
+  type CurrencyDisplay,
+} from '../../utils/exchangeRate'
 import Logo from '../Logo'
 import type { WorksheetRow } from './types'
 
@@ -16,10 +21,10 @@ interface QuoteDocumentProps {
   profitRate: ProfitRate
   display: CurrencyDisplay
   /**
-   * When on (and an exchange rate exists), every price on the quote is shown
-   * in both currencies: the selected one first, the other beneath it.
+   * Second currency to print beneath every price, or null to show only the
+   * selected one. Chosen by the worksheet, which knows the available rates.
    */
-  dualCurrency: boolean
+  alternate: CurrencyDisplay | null
   /**
    * Payment term printed in the terms list: advance by default, or net 15
    * days when the "Net 15 days payment" switch is on.
@@ -46,7 +51,7 @@ function roundedFigures(finalPriceUsd: number, qty: number, display: CurrencyDis
 
 /** Symbol + grouped digits: ₹1,02,010.40 (Indian lakh grouping) or $1,153.00. */
 function formatMoney(value: number, display: CurrencyDisplay): string {
-  const grouped = value.toLocaleString(display.currency === 'INR' ? 'en-IN' : 'en-US', {
+  const grouped = value.toLocaleString(currencyLocale(display), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })
@@ -64,7 +69,7 @@ function QuoteDocument({
   items,
   profitRate,
   display,
-  dualCurrency,
+  alternate,
   net15Payment,
   dapMowCost,
 }: QuoteDocumentProps) {
@@ -73,13 +78,10 @@ function QuoteDocument({
     month: 'long',
     day: 'numeric',
   })
-  // Prices are calculated in USD as always; when INR is selected they are
-  // converted for display with the applied (live + markup) exchange rate.
-  // Dual-currency mode adds the other currency as a second line per figure.
-  const secondary: CurrencyDisplay | null =
-    dualCurrency && display.appliedRate !== null
-      ? { currency: display.currency === 'INR' ? 'USD' : 'INR', appliedRate: display.appliedRate }
-      : null
+  // Prices are calculated in USD as always; any other display currency is
+  // converted with that currency's applied (live + markup) rate.
+  // Dual-currency mode adds the alternate currency as a second line per figure.
+  const secondary = alternate
   const ccyLabel =
     secondary === null ? display.currency : `${display.currency} / ${secondary.currency}`
 

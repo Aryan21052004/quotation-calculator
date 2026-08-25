@@ -1,8 +1,14 @@
 import type { ExchangeRate } from '../../hooks/useExchangeRate'
-import { RATE_MARKUP_INR, type DisplayCurrency } from '../../utils/exchangeRate'
+import {
+  DISPLAY_CURRENCIES,
+  INR_QUOTED_CURRENCIES,
+  RATE_MARKUP_INR,
+  appliedRupeesPerUnit,
+  rupeesPerUnit,
+  type DisplayCurrency,
+  type QuotedAgainstInr,
+} from '../../utils/exchangeRate'
 import { Badge, Button, SectionCard } from '../ui'
-
-const CURRENCY_OPTIONS: DisplayCurrency[] = ['USD', 'INR']
 
 interface ExchangeRateCardProps {
   rate: ExchangeRate
@@ -10,8 +16,9 @@ interface ExchangeRateCardProps {
   onCurrencyChange: (currency: DisplayCurrency) => void
 }
 
-function formatRate(value: number): string {
-  return `₹${value.toFixed(2)} / USD`
+/** Rupee amounts: 2 decimals normally, 4 where one unit is worth about ₹1. */
+function formatRupees(value: number, currency: DisplayCurrency): string {
+  return `₹${value.toFixed(value < 10 ? 4 : 2)} / ${currency}`
 }
 
 function formatLastUpdated(date: Date): string {
@@ -24,11 +31,11 @@ function formatLastUpdated(date: Date): string {
   return `${day} • ${time}`
 }
 
-/** Live USD → INR rate, the applied (+₹1) rate, and the display currency toggle. */
+/** Live and applied rupee rates per currency, plus the display-currency toggle. */
 function ExchangeRateCard({ rate, currency, onCurrencyChange }: ExchangeRateCardProps) {
   const {
-    liveRate,
-    appliedRate,
+    liveRates,
+    appliedRates,
     lastUpdated,
     ratePublishedAt,
     refreshing,
@@ -39,7 +46,7 @@ function ExchangeRateCard({ rate, currency, onCurrencyChange }: ExchangeRateCard
   return (
     <SectionCard
       title="Exchange Rate"
-      subtitle="Live USD → INR rate; conversions always use the applied rate."
+      subtitle="Live rates against the rupee; conversions always use the applied rate."
       action={
         <div>
           <span className="block text-right text-[13px] font-medium text-slate-600">
@@ -50,8 +57,8 @@ function ExchangeRateCard({ rate, currency, onCurrencyChange }: ExchangeRateCard
             aria-label="Display currency"
             className="mt-1.5 inline-flex rounded-xl border border-slate-300 bg-white p-1 shadow-sm"
           >
-            {CURRENCY_OPTIONS.map((option) => {
-              const disabled = option === 'INR' && appliedRate === null
+            {DISPLAY_CURRENCIES.map((option) => {
+              const disabled = option !== 'USD' && appliedRates[option] === undefined
               return (
                 <button
                   key={option}
@@ -60,7 +67,7 @@ function ExchangeRateCard({ rate, currency, onCurrencyChange }: ExchangeRateCard
                   aria-pressed={currency === option}
                   disabled={disabled}
                   title={disabled ? 'Waiting for an exchange rate' : undefined}
-                  className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
                     currency === option
                       ? 'bg-primary text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-100'
@@ -75,25 +82,34 @@ function ExchangeRateCard({ rate, currency, onCurrencyChange }: ExchangeRateCard
       }
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <RateTile label="Live rate" value={liveRate === null ? '—' : formatRate(liveRate)} />
-        <RateTile
-          label="Applied rate"
-          value={appliedRate === null ? '—' : formatRate(appliedRate)}
-          note={`Live rate + ₹${RATE_MARKUP_INR.toFixed(2)}`}
-          emphasis
-        />
-        <RateTile
-          label="Last updated"
-          value={lastUpdated === null ? '—' : formatLastUpdated(lastUpdated)}
-          note={
-            ratePublishedAt === null
-              ? undefined
-              : `Rate published ${formatLastUpdated(ratePublishedAt)}`
-          }
-        />
+        {INR_QUOTED_CURRENCIES.map((option) => (
+          <RateTile
+            key={option}
+            currency={option}
+            live={rupeesPerUnit(option, liveRates)}
+            applied={appliedRupeesPerUnit(option, liveRates)}
+            // Quoting in INR converts through the USD rate, so that tile
+            // carries the highlight while rupees are shown.
+            emphasis={option === currency || (currency === 'INR' && option === 'USD')}
+          />
+        ))}
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-slate-200/70 bg-slate-50/80 p-4">
+          <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">Last updated</p>
+          <p className="mt-1 text-sm font-semibold text-primary">
+            {lastUpdated === null ? '—' : formatLastUpdated(lastUpdated)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-400">
+            {ratePublishedAt === null
+              ? 'Applied rate = live rate + this currency’s markup'
+              : `Rate published ${formatLastUpdated(ratePublishedAt)}`}
+          </p>
+        </div>
         <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200/70 bg-slate-50/80 p-4">
           <div className="min-w-0">
-            {usingCachedRate && <Badge tone="amber">Using cached exchange rate.</Badge>}
+            {usingCachedRate && <Badge tone="amber">Using cached exchange rates.</Badge>}
             {errorMessage && <p className="text-xs text-rose-600">{errorMessage}</p>}
             {!usingCachedRate && !errorMessage && (
               <Badge tone="emerald">{refreshing ? 'Updating…' : 'Live'}</Badge>
@@ -109,13 +125,15 @@ function ExchangeRateCard({ rate, currency, onCurrencyChange }: ExchangeRateCard
 }
 
 interface RateTileProps {
-  label: string
-  value: string
-  note?: string
-  emphasis?: boolean
+  currency: QuotedAgainstInr
+  live: number | null
+  applied: number | null
+  /** The currency the quote is currently shown in gets the accent treatment. */
+  emphasis: boolean
 }
 
-function RateTile({ label, value, note, emphasis = false }: RateTileProps) {
+function RateTile({ currency, live, applied, emphasis }: RateTileProps) {
+  const markup = RATE_MARKUP_INR[currency]
   return (
     <div
       className={`rounded-xl border p-4 ${
@@ -127,16 +145,18 @@ function RateTile({ label, value, note, emphasis = false }: RateTileProps) {
           emphasis ? 'text-sky-700' : 'text-slate-500'
         }`}
       >
-        {label}
+        {currency}
       </p>
       <p
-        className={`mt-1 text-xl font-bold tabular-nums ${
-          emphasis ? 'text-sky-900' : 'text-primary'
-        }`}
+        className={`mt-1 text-lg font-bold tabular-nums ${emphasis ? 'text-sky-900' : 'text-primary'}`}
       >
-        {value}
+        {applied === null ? '—' : formatRupees(applied, currency)}
       </p>
-      {note && <p className="mt-0.5 text-[11px] text-slate-400">{note}</p>}
+      <p className="mt-0.5 text-[11px] text-slate-400">
+        {live === null
+          ? 'Waiting for a rate'
+          : `Live ${formatRupees(live, currency)} + ₹${markup.toFixed(2)}`}
+      </p>
     </div>
   )
 }

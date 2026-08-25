@@ -7,6 +7,8 @@ interface QuoteOptionsCardProps {
   onDualCurrencyChange: (on: boolean) => void
   /** Dual currency needs an exchange rate, so it stays off until one loads. */
   exchangeRateReady: boolean
+  /** The pair that will print, e.g. "EUR and USD" — depends on the selection. */
+  currencyPairLabel: string
   /** When on, the payment term reads "Net 15 days" instead of "In advance". */
   net15Payment: boolean
   onNet15PaymentChange: (on: boolean) => void
@@ -24,6 +26,7 @@ function QuoteOptionsCard({
   dualCurrency,
   onDualCurrencyChange,
   exchangeRateReady,
+  currencyPairLabel,
   net15Payment,
   onNet15PaymentChange,
   dapMowCost,
@@ -50,7 +53,7 @@ function QuoteOptionsCard({
         />
         <OptionTile
           label="Both currencies"
-          value={dualCurrency ? 'USD and INR' : 'Selected currency only'}
+          value={dualCurrency ? currencyPairLabel : 'Selected currency only'}
           note={exchangeRateReady ? 'Adds a second line per price' : 'Waiting for an exchange rate'}
           checked={dualCurrency}
           onChange={onDualCurrencyChange}
