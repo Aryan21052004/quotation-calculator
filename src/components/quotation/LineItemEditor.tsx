@@ -72,6 +72,14 @@ function LineItemEditor({ row, core, profitRate, display, onFieldChange }: LineI
             onFieldChange={onFieldChange}
             className="sm:col-span-2"
           />
+          <FormField label="Remarks" htmlFor={`item-${row.id}-remarks`} className="sm:col-span-2">
+            <TextArea
+              id={`item-${row.id}-remarks`}
+              value={row.remarks}
+              placeholder="e.g. Traceable to airline teardown; MOQ negotiable"
+              onChange={(event) => onFieldChange(row.id, 'remarks', event.target.value)}
+            />
+          </FormField>
           <FormField label="Condition" htmlFor={`item-${row.id}-condition`}>
             <SelectInput
               id={`item-${row.id}-condition`}

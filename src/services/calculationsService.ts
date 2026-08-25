@@ -25,6 +25,7 @@ function toRowSeed(value: unknown, index: number): WorksheetRowSeed {
     // Rows saved before the fields existed simply read back as ''.
     description: text('description'),
     certificate: text('certificate'),
+    remarks: text('remarks'),
     moq: text('moq'),
     condition: text('condition'),
     unitPrice: text('unitPrice'),

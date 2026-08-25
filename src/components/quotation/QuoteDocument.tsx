@@ -138,20 +138,20 @@ function QuoteDocument({
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-navy text-left text-[11px] tracking-[0.08em] text-white uppercase">
-              <th className="py-3.5 pr-3 pl-5 font-semibold">#</th>
-              <th className="py-3.5 pr-3 font-semibold">Part number</th>
-              <th className="py-3.5 pr-3 font-semibold">Condition</th>
-              <th className="py-3.5 pr-7 text-right font-semibold">Qty</th>
-              <th className="py-3.5 pr-3 font-semibold">Lead time</th>
-              <th className="py-3.5 pr-3 text-right font-semibold">Unit price ({ccyLabel})</th>
-              <th className="py-3.5 pr-5 text-right font-semibold">Amount ({ccyLabel})</th>
+              <th className="py-3.5 pr-4 pl-5 font-semibold">#</th>
+              <th className="py-3.5 px-4 font-semibold">Part number</th>
+              <th className="py-3.5 px-4 font-semibold">Condition</th>
+              <th className="py-3.5 px-4 text-right font-semibold">Qty</th>
+              <th className="py-3.5 px-4 font-semibold">Lead time</th>
+              <th className="py-3.5 px-4 text-right font-semibold">Unit price ({ccyLabel})</th>
+              <th className="py-3.5 pr-5 pl-4 text-right font-semibold">Amount ({ccyLabel})</th>
             </tr>
           </thead>
           <tbody>
             {visibleItems.map(({ row, main, alt }, index) => (
               <tr key={row.id} className="border-b border-slate-100">
-                <td className="py-3.5 pr-3 pl-5 text-slate-400">{index + 1}</td>
-                <td className="py-3.5 pr-3 font-semibold">
+                <td className="py-3.5 pr-4 pl-5 text-slate-400">{index + 1}</td>
+                <td className="py-3.5 px-4 font-semibold">
                   {row.partNumber || '—'}
                   {row.description.trim() !== '' && (
                     <span className="block text-xs font-normal text-slate-500">
@@ -163,8 +163,13 @@ function QuoteDocument({
                       Cert: {row.certificate}
                     </span>
                   )}
+                  {row.remarks.trim() !== '' && (
+                    <span className="block text-xs font-normal text-slate-500">
+                      Remarks: {row.remarks}
+                    </span>
+                  )}
                 </td>
-                <td className="py-3.5 pr-3">
+                <td className="py-3.5 px-4">
                   {row.condition ? (
                     <span className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium">
                       {row.condition}
@@ -173,12 +178,12 @@ function QuoteDocument({
                     '—'
                   )}
                 </td>
-                <td className="py-3.5 pr-7 text-right tabular-nums">
+                <td className="py-3.5 px-4 text-right tabular-nums">
                   {row.moq !== '' ? row.moq : '—'}
                 </td>
                 {/* Storage names are interchanged: `unitPrice` holds the lead time. */}
-                <td className="py-3.5 pr-3">{row.unitPrice !== '' ? row.unitPrice : '—'}</td>
-                <td className="py-3.5 pr-3 text-right tabular-nums">
+                <td className="py-3.5 px-4">{row.unitPrice !== '' ? row.unitPrice : '—'}</td>
+                <td className="py-3.5 px-4 text-right tabular-nums">
                   {main === null ? '—' : formatMoney(main.unitPrice, display)}
                   {alt !== null && secondary !== null && (
                     <span className="block text-xs text-slate-500">
@@ -186,7 +191,7 @@ function QuoteDocument({
                     </span>
                   )}
                 </td>
-                <td className="py-3.5 pr-5 text-right font-semibold tabular-nums">
+                <td className="py-3.5 pr-5 pl-4 text-right font-semibold tabular-nums">
                   {main === null ? '—' : formatMoney(main.amount, display)}
                   {alt !== null && secondary !== null && (
                     <span className="block text-xs font-normal text-slate-500">
@@ -200,10 +205,10 @@ function QuoteDocument({
           <tfoot>
             <tr className="bg-navy">
               <td colSpan={5} className="py-4 pl-5" />
-              <td className="py-4 pr-3 text-right text-xs font-semibold tracking-[0.14em] text-white/80 uppercase">
+              <td className="py-4 px-4 text-right text-xs font-semibold tracking-[0.14em] text-white/80 uppercase">
                 Total
               </td>
-              <td className="py-4 pr-5 text-right text-base font-bold text-gold tabular-nums">
+              <td className="py-4 pr-5 pl-4 text-right text-base font-bold text-gold tabular-nums">
                 {formatMoney(grandTotal, display)}
                 {altGrandTotal !== null && secondary !== null && (
                   <span className="block text-sm font-semibold text-white/70">
